@@ -4,6 +4,7 @@
 
 import { auth, db, MESTRE, getNomeExibicao } from './db.js';
 import { escapeHtml } from './util.js';
+import { iniciarAtmosfera, costurar } from './atmosfera.js';
 
 export { db as storage, MESTRE };
 export { escapeHtml, escapeAttr } from './util.js';
@@ -182,9 +183,19 @@ export function seamHtml() {
   return `
     <div class="seam" aria-hidden="true">
       <svg viewBox="0 0 700 16" preserveAspectRatio="none">
-        <path d="M0 8 Q 17.5 1, 35 8 T 70 8 T 105 8 T 140 8 T 175 8 T 210 8 T 245 8 T 280 8 T 315 8 T 350 8 T 385 8 T 420 8 T 455 8 T 490 8 T 525 8 T 560 8 T 595 8 T 630 8 T 665 8 T 700 8"/>
+        <path d="M0 8 Q 17.5 5, 35 8 T 70 8 T 105 8 T 140 8 T 175 8 T 210 8 T 245 8 T 280 8 T 315 8 T 350 8 T 385 8 T 420 8 T 455 8 T 490 8 T 525 8 T 560 8 T 595 8 T 630 8 T 665 8 T 700 8"/>
       </svg>
     </div>`;
+}
+
+/**
+ * Liga a atmosfera da página: o campo de linhas ao fundo e a costura dos
+ * divisores. Cada tela chama isto depois de desenhar o próprio conteúdo,
+ * já que a teia precisa saber onde os cartões estão.
+ */
+export function ambientar(focoSeletor = '.patch') {
+  iniciarAtmosfera(focoSeletor);
+  costurar();
 }
 
 /**

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'o-avesso-v10';
+const CACHE_NAME = 'o-avesso-v11';
 const APP_SHELL = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const APP_SHELL = [
   './pages/icons/icon-512.png',
   './scripts/db.js',
   './scripts/util.js',
+  './scripts/atmosfera.js',
   './scripts/session.js',
   './scripts/hub.js',
   './scripts/manual.js',

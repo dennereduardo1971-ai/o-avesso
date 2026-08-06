@@ -2,6 +2,7 @@
 
 import { auth, getNomeExibicao } from './db.js';
 import { escapeHtml } from './util.js';
+import { iniciarAtmosfera, entrarEmCascata, costurar } from './atmosfera.js';
 
 async function showHub(user) {
   const screen = document.getElementById('splash-screen');
@@ -11,6 +12,11 @@ async function showHub(user) {
     const splash = document.getElementById('splash-root');
     if (splash) splash.innerHTML = '';
     document.getElementById('hub-root').style.display = 'block';
+    // a teia só entra depois do Hub aparecer: ela precisa saber onde os
+    // retalhos estão pra conseguir se retesar em volta deles
+    iniciarAtmosfera('.portal-card');
+    costurar();
+    entrarEmCascata('.portal-card', 260);
   }, screen ? 700 : 0);
 
   // O Caderno do Mestre simplesmente não existe pra quem não conduz.
