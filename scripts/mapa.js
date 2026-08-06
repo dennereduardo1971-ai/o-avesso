@@ -1,7 +1,7 @@
 // mapa.js — Mapa do Avesso. Compartilhado: é o mesmo mapa pra mesa inteira.
 // A névoa, porém, é do mestre: só ele revela (ou volta a esconder) uma região.
 
-import { initPage, storage, createSaver } from './session.js';
+import { initPage, storage, createSaver, escapeHtml } from './session.js';
 
 const STORAGE_KEY = 'mapa-avesso';
 const COMPARTILHADO = true;
@@ -60,8 +60,6 @@ async function loadState() {
 function scheduleSave() {
   save(() => storage.set(STORAGE_KEY, estado, COMPARTILHADO));
 }
-
-function escapeHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // O mestre enxerga o mapa inteiro; os jogadores, só o que já foi revelado.
 function visivel(areaId) {

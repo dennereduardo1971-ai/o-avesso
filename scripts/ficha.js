@@ -1,6 +1,6 @@
 // ficha.js — Ficha da Visitante. Pessoal: cada login tem a sua, e ninguém mais lê.
 
-import { initPage, storage, createSaver } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-ficha-personagem';
 const COMPARTILHADO = false;
@@ -160,13 +160,6 @@ function kitItem(key, icon, name) {
     <span class="kit-icon">${icon}</span>
     <span class="kit-name">${name}</span>
   </label>`;
-}
-
-function escapeAttr(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-}
-function escapeHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function attachHandlers() {

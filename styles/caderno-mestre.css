@@ -1,13 +1,8 @@
+/* paleta comum: styles/shared.css — aqui só o que é do caderno.
+   O vermelho do mestre é um vinho mais fundo que o do resto do app. */
 :root {
-  --bg-deep: #14101a;
-  --panel: #201a28;
-  --parchment: #ede2d0;
-  --parchment-dim: #cabfae;
   --ink-red: #7a3540;
   --ink-red-soft: #5c2a32;
-  --gold: #b68a4e;
-  --gold-soft: #8f7148;
-  --seam: #5f4f52;
 }
 
 #caderno-root * { box-sizing: border-box; }

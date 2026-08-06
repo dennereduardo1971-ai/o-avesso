@@ -1,7 +1,7 @@
 // quadro-de-linhas.js — corkboard da mesa inteira. Compartilhado: todo mundo
 // vê os mesmos cartões e os mesmos fios, em qualquer aparelho.
 
-import { initPage, storage, createSaver } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-quadro-de-linhas';
 const COMPARTILHADO = true;
@@ -56,9 +56,6 @@ async function loadState() {
 function scheduleSave() {
   save(() => storage.set(STORAGE_KEY, state, COMPARTILHADO));
 }
-
-function escapeAttr(str) { return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-function escapeHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function addCard(tipo) {
   const n = state.cards.length;

@@ -1,7 +1,7 @@
 // gerador-npcs.js — personagens de improviso, só pro mestre. A lista de
 // guardados é dele; não abre pros jogadores nem aparece no hub deles.
 
-import { initPage, storage, createSaver } from './session.js';
+import { initPage, storage, createSaver, escapeHtml } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-gerador-npcs';
 const COMPARTILHADO = false;
@@ -97,10 +97,6 @@ function removerSalvo(idx) {
   saved.splice(idx, 1);
   scheduleSave();
   render();
-}
-
-function escapeHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function render() {

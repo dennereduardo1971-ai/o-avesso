@@ -1,12 +1,5 @@
+/* paleta comum: styles/shared.css — aqui só o papel do mapa */
 :root {
-  --bg-deep: #14101a;
-  --panel: #201a28;
-  --parchment: #ede2d0;
-  --parchment-dim: #cabfae;
-  --gold: #b68a4e;
-  --gold-soft: #8f7148;
-  --ink-dark: #2b2130;
-  --seam: #5f4f52;
   --paper: #e3d3ab;
   --paper-dark: #c9b183;
   --ink-line: #5c4326;

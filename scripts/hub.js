@@ -1,6 +1,7 @@
 // hub.js — splash do espelho, login de verdade e a porta certa pra cada pessoa.
 
 import { auth, getNomeExibicao } from './db.js';
+import { escapeHtml } from './util.js';
 
 async function showHub(user) {
   const screen = document.getElementById('splash-screen');
@@ -32,10 +33,6 @@ async function showHub(user) {
       window.location.reload();
     });
   }
-}
-
-function escapeHtml(str) {
-  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function renderSplash() {

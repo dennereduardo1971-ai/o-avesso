@@ -1,15 +1,7 @@
+/* paleta comum: styles/shared.css — aqui só o que é da ficha */
 :root {
-  --bg-deep: #191119;
-  --panel: #241a26;
-  --parchment: #ede2d0;
-  --parchment-dim: #d9cbb0;
-  --thread-blue: #3f5f7f;
   --thread-blue-dark: #2c4459;
-  --gold: #b68a4e;
-  --gold-soft: #8f7148;
-  --ink: #2b2130;
   --torn-red: #8a4444;
-  --seam: #6b5a45;
 }
 
 #ficha-root * { box-sizing: border-box; }

@@ -1,6 +1,6 @@
 // diario.js — resumo de cada sessão. Compartilhado com a mesa inteira.
 
-import { initPage, storage, createSaver } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-diario';
 const COMPARTILHADO = true;
@@ -26,9 +26,6 @@ async function loadState() {
 function scheduleSave() {
   save(() => storage.set(STORAGE_KEY, { entries: entries }, COMPARTILHADO));
 }
-
-function escapeAttr(str) { return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-function escapeHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function addEntry() {
   const nextNum = entries.length > 0 ? Math.max(...entries.map(e => parseInt(e.numero, 10) || 0)) + 1 : 1;

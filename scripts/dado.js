@@ -3,7 +3,7 @@
 // tabelas rápidas de improviso (só o mestre) e um bloco de anotações rápidas
 // pessoais. Os dados são exibidos em cubo/gema 3D via CSS.
 
-import { initPage, storage, createSaver } from './session.js';
+import { initPage, storage, createSaver, escapeHtml } from './session.js';
 
 const FICHA_KEY = 'o-avesso-ficha-personagem';
 const HISTORICO_KEY = 'o-avesso-historico-rolagens';
@@ -195,10 +195,6 @@ function rolarMestreD10() {
   const dado = rolarD10();
   rolagemMestre = { tipo: 'complicacao', dado: dado, texto: TABELA_MESTRE_D10[dado - 1] };
   render();
-}
-
-function escapeHtml(str) {
-  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function pipsFaceHtml(n) {
