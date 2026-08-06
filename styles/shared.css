@@ -219,27 +219,23 @@ a.patch:hover, button.patch:hover {
   background: var(--panel-raised);
 }
 
-/* o botão de latão que prende o retalho */
-.pin {
-  position: absolute;
-  top: -9px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #d9ab6c, var(--accent-soft));
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-.pin::after {
+/* O botão de latão que prende o retalho. É pseudo-elemento de propósito:
+   assim nenhuma tela precisa carregar um <span> só pra desenhar o botão. */
+.patch::after {
   content: "";
   position: absolute;
-  inset: 5px;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: 1px solid rgba(20, 16, 26, 0.5);
+  background: radial-gradient(circle at 35% 30%, #d9ab6c, var(--accent-soft));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 0 0 1.5px rgba(20, 16, 26, 0.4);
 }
-.patch.pista .pin { background: radial-gradient(circle at 35% 30%, #6f93c2, var(--thread-blue)); }
-.patch.suspeito .pin { background: radial-gradient(circle at 35% 30%, #c17672, var(--ink-red)); }
+.patch.pista::after { background: radial-gradient(circle at 35% 30%, #6f93c2, var(--thread-blue)); }
+.patch.suspeito::after { background: radial-gradient(circle at 35% 30%, #c17672, var(--ink-red)); }
+.patch.sem-alfinete::after { display: none; }
 
 /* ---- cabeçalho de página -------------------------------------------------
    Cada tela redesenhava isto com um prefixo próprio (.header, .dv-header,

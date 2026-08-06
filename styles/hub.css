@@ -56,9 +56,13 @@
 
 .hub-wrap {
   min-height: 100%;
+  /* as duas últimas camadas são um tramado de linha bem fraco, como se o
+     Hub inteiro estivesse desenhado sobre tecido */
   background-image:
     radial-gradient(ellipse at 20% 0%, rgba(63,95,127,0.10), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
+    radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%),
+    repeating-linear-gradient(0deg, rgba(63,95,127,0.055) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(90deg, rgba(63,95,127,0.055) 0 1px, transparent 1px 46px);
   padding: 40px 18px 50px;
 }
 .hub-frame { max-width: 680px; margin: 0 auto; }
@@ -67,31 +71,11 @@
 .hub-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 38px; margin: 0; }
 .hub-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--parchment-dim); margin: 4px 0 0; }
 
-.seam { height: 14px; margin: 24px 0 22px; position: relative; }
-.seam::after {
-  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
-  position: absolute; left:0; right:0; top:-6px; text-align:center;
-  letter-spacing:6px; font-size:9px; color: var(--seam); white-space: nowrap; overflow: hidden;
-}
+/* a costura e o desenho do cartão vêm de shared.css (.seam e .patch);
+   aqui fica só o que é do Hub: a grade e o conteúdo de cada retalho */
 
-.portal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.portal-card {
-  display: block;
-  background: var(--panel);
-  border: 1px solid rgba(182,138,78,0.3);
-  border-top: 4px solid var(--gold);
-  border-radius: 6px;
-  padding: 20px 16px;
-  text-decoration: none;
-  color: var(--parchment);
-  text-align: center;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-.portal-card:hover { transform: translateY(-3px); border-top-color: #d9ab6c; }
-.portal-card.pista { border-top-color: var(--thread-blue); }
-.portal-card.pista:hover { border-top-color: #5b85ac; }
-.portal-card.suspeito { border-top-color: var(--ink-red); }
-.portal-card.suspeito:hover { border-top-color: #c65b53; }
+.portal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.portal-card { text-align: center; }
 .portal-icon { font-size: 30px; margin-bottom: 8px; }
 .portal-name { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 18px; margin: 0 0 4px; }
 .portal-desc { font-size: 12px; color: var(--parchment-dim); margin: 0; line-height: 1.4; }
