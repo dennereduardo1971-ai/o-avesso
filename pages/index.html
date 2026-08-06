@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b68a4e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="stylesheet" href="../styles/shared.css">
+<link rel="stylesheet" href="../styles/hub.css">
+<title>O Avesso — Hub</title>
+</head>
+<body>
+
+<div id="splash-root"></div>
+
+<div class="hub-wrap" id="hub-root" style="display:none;">
+  <div class="hub-frame">
+    <div class="hub-header">
+      <p class="hub-eyebrow">Mansão Brasswood</p>
+      <h1 class="hub-title">O Avesso</h1>
+      <p class="hub-sub">Escolha por onde atravessar.</p>
+      <p class="hub-user" id="hub-user"></p>
+      <div class="hub-actions"><button type="button" class="hub-sair" id="hub-sair">sair</button></div>
+    </div>
+
+    <div class="seam"></div>
+
+    <div class="portal-grid">
+      <a class="portal-card pista" href="manual.html">
+        <div class="portal-icon">📖</div>
+        <p class="portal-name">Manual do Jogador</p>
+        <p class="portal-desc">Premissa, atributos, dados e o primeiro caso</p>
+        <span class="portal-badge compartilhado">compartilhado</span>
+      </a>
+      <a class="portal-card" href="ficha.html">
+        <div class="portal-icon">🪡</div>
+        <p class="portal-name">Ficha da Visitante</p>
+        <p class="portal-desc">Atributos, Linha da Lógica, Kit de Detetive</p>
+        <span class="portal-badge pessoal">só você</span>
+      </a>
+      <a class="portal-card pista" href="dado.html">
+        <div class="portal-icon">🎲</div>
+        <p class="portal-name">Dado Rolável</p>
+        <p class="portal-desc">1d6 + atributo, direto da sua ficha, e um d10 solto</p>
+        <span class="portal-badge compartilhado">compartilhado</span>
+      </a>
+      <a class="portal-card suspeito" href="caderno-mestre.html" data-somente-mestre style="display:none;">
+        <div class="portal-icon">📓</div>
+        <p class="portal-name">Caderno do Mestre</p>
+        <p class="portal-desc">NPCs, casos, mundo persistente</p>
+        <span class="portal-badge mestre">só o mestre</span>
+      </a>
+      <a class="portal-card pista" href="quadro-de-linhas.html">
+        <div class="portal-icon">🧵</div>
+        <p class="portal-name">Quadro de Linhas</p>
+        <p class="portal-desc">Pistas, suspeitos e conexões</p>
+        <span class="portal-badge compartilhado">compartilhado</span>
+      </a>
+      <a class="portal-card" href="mapa.html">
+        <div class="portal-icon">🗺️</div>
+        <p class="portal-name">Mapa do Avesso</p>
+        <p class="portal-desc">Sete áreas, reveladas conforme são descobertas</p>
+        <span class="portal-badge compartilhado">compartilhado</span>
+      </a>
+      <a class="portal-card suspeito" href="gerador-npcs.html" data-somente-mestre style="display:none;">
+        <div class="portal-icon">🎭</div>
+        <p class="portal-name">Gerador de NPCs</p>
+        <p class="portal-desc">Personagens rápidos de improviso</p>
+        <span class="portal-badge mestre">só o mestre</span>
+      </a>
+      <a class="portal-card" href="diario.html" style="grid-column: span 2;">
+        <div class="portal-icon">📰</div>
+        <p class="portal-name">Diário do Avesso</p>
+        <p class="portal-desc">Resumo de cada sessão — pra quem faltou nunca ficar perdida</p>
+        <span class="portal-badge compartilhado">compartilhado</span>
+      </a>
+      <a class="portal-card" href="conta.html">
+        <div class="portal-icon">🪞</div>
+        <p class="portal-name">Minha Conta</p>
+        <p class="portal-desc">Nome de exibição e troca de senha</p>
+        <span class="portal-badge pessoal">só você</span>
+      </a>
+    </div>
+
+    <p class="hub-footer">"Do outro lado do espelho, tudo tem costura."</p>
+    <a id="install-link" href="#" style="display:none; margin-top:10px; color:#b68a4e; text-decoration:none; font-size:12px; letter-spacing:0.08em; text-transform:uppercase;">Instalar o app</a>
+  </div>
+</div>
+
+<script type="module" src="../scripts/hub.js"></script>
+</body>
+</html>

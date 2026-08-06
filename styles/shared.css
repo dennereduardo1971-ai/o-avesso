@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+  color-scheme: dark;
+  --page-bg: #14101a;
+  --page-text: #ede2d0;
+  --page-muted: #cabfae;
+  --accent: #b68a4e;
+  --accent-soft: #8f7148;
+  --thread-blue: #3f5f7f;
+  --ink-red: #a5453f;
+  --panel: #241a26;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--page-bg);
+  color: var(--page-text);
+}
+body {
+  min-height: 100vh;
+  font-family: 'EB Garamond', serif;
+}
+a { color: inherit; }
+
+/* ---- barra de topo (todas as páginas internas) ---- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 7px 12px;
+  background: rgba(20, 16, 26, 0.94);
+  border-bottom: 1px solid rgba(182, 138, 78, 0.28);
+  backdrop-filter: blur(4px);
+  font-size: 12px;
+}
+.topbar-spacer { flex: 1; }
+.topbar-back {
+  color: var(--page-text);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  padding: 4px 10px;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+.topbar-back:hover { background: rgba(182, 138, 78, 0.15); }
+.topbar-btn {
+  background: none;
+  border: 1px solid rgba(182, 138, 78, 0.4);
+  border-radius: 5px;
+  color: var(--page-muted);
+  font-family: 'EB Garamond', serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.topbar-btn:hover { background: rgba(182, 138, 78, 0.15); color: var(--page-text); }
+.topbar-btn:disabled { opacity: 0.6; cursor: default; }
+
+.user-chip {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  color: var(--page-text);
+  border: 1px dashed rgba(182, 138, 78, 0.45);
+  border-radius: 999px;
+  padding: 3px 11px;
+}
+.user-chip em { color: var(--accent); font-style: italic; }
+
+.scope-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  cursor: help;
+}
+.scope-tag.pessoal { color: #cdbb96; border-color: rgba(182, 138, 78, 0.45); background: rgba(182, 138, 78, 0.10); }
+.scope-tag.compartilhado { color: #9bb6cf; border-color: rgba(63, 95, 127, 0.6); background: rgba(63, 95, 127, 0.18); }
+.scope-tag.mestre { color: #d79a94; border-color: rgba(165, 69, 63, 0.6); background: rgba(165, 69, 63, 0.16); }
+
+/* ---- porta trancada (jogador tentando abrir o caderno do mestre) ---- */
+
+.locked-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-image:
+    radial-gradient(ellipse at 50% 20%, rgba(165, 69, 63, 0.12), transparent 60%),
+    radial-gradient(ellipse at 50% 90%, rgba(182, 138, 78, 0.08), transparent 55%);
+}
+.locked-card {
+  max-width: 380px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid rgba(182, 138, 78, 0.3);
+  border-top: 4px solid var(--ink-red);
+  border-radius: 6px;
+  padding: 30px 26px 24px;
+}
+.locked-icon { font-size: 34px; margin-bottom: 10px; opacity: 0.85; }
+.locked-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 24px;
+  margin: 0 0 10px;
+}
+.locked-text { font-size: 14px; line-height: 1.55; color: var(--page-muted); margin: 0 0 18px; }
+.locked-link { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); text-decoration: none; }
+.locked-link:hover { text-decoration: underline; }
+
+/* ---- avisos de escopo dentro das páginas ---- */
+
+.scope-note {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--page-muted);
+  opacity: 0.85;
+  margin: 6px 0 0;
+  text-align: center;
+}
+
+.page-loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-family: 'EB Garamond', serif;
+  color: var(--page-text);
+}
+
+@media (max-width: 420px) {
+  .topbar { gap: 6px; padding: 6px 8px; }
+  .scope-tag { display: none; }
+}

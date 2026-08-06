@@ -1,0 +1,110 @@
+:root {
+  --bg-deep: #14101a;
+  --panel: #241a26;
+  --parchment: #ede2d0;
+  --parchment-dim: #cabfae;
+  --thread-blue: #3f5f7f;
+  --gold: #b68a4e;
+  --gold-soft: #8f7148;
+  --ink-dark: #2b2130;
+  --seam: #5f4f52;
+}
+
+#diario-root * { box-sizing: border-box; }
+
+.dv-wrap {
+  background: var(--bg-deep);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(63,95,127,0.10), transparent 55%),
+    radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
+  padding: 36px 16px 48px;
+  font-family: 'EB Garamond', serif;
+  color: var(--parchment);
+  min-height: 100%;
+}
+
+.dv-frame { max-width: 660px; margin: 0 auto; }
+
+.dv-header { text-align: center; margin-bottom: 6px; }
+.dv-eyebrow { letter-spacing: 0.28em; font-size: 11px; text-transform: uppercase; color: var(--gold); margin: 0 0 6px; }
+.dv-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 40px; margin: 0; }
+.dv-subtitle { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--parchment-dim); margin: 4px 0 0; }
+.dv-notice {
+  text-align: center; font-size: 11px; color: var(--parchment-dim);
+  margin: 10px auto 0; max-width: 460px; font-style: italic;
+}
+
+.dv-seam { height: 14px; margin: 22px 0 18px; position: relative; }
+.dv-seam::after {
+  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
+  position: absolute; left: 0; right: 0; top: -6px; text-align: center;
+  letter-spacing: 6px; font-size: 9px; color: var(--seam); white-space: nowrap; overflow: hidden;
+}
+
+.dv-add-btn {
+  display: block; margin: 0 auto 20px;
+  background: var(--gold); color: var(--ink-dark);
+  border: none; border-radius: 5px;
+  font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 16px;
+  padding: 10px 22px; cursor: pointer;
+}
+.dv-add-btn:hover { background: #c69a5e; }
+
+.dv-entries { display: flex; flex-direction: column; gap: 18px; }
+
+.dv-entry {
+  background: var(--panel);
+  border: 1px solid rgba(182,138,78,0.3);
+  border-radius: 5px;
+  padding: 18px 20px 16px;
+  position: relative;
+}
+.dv-entry-top { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-end; }
+.dv-field { display: flex; flex-direction: column; gap: 3px; }
+.dv-field label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--parchment-dim); }
+.dv-field input[type="text"], .dv-field textarea {
+  background: rgba(237,226,208,0.06);
+  border: 1px solid rgba(182,138,78,0.35);
+  border-radius: 3px;
+  color: var(--parchment);
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  padding: 6px 9px;
+  width: 100%;
+}
+.dv-field input[type="text"]:focus, .dv-field textarea:focus { outline: none; border-color: var(--gold); background: rgba(237,226,208,0.1); }
+.dv-field.numero { width: 70px; flex-shrink: 0; }
+.dv-field.data { width: 100px; flex-shrink: 0; }
+.dv-field.titulo { flex: 1; }
+
+.dv-titulo-display {
+  font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 22px;
+  color: var(--parchment); margin: 2px 0 4px;
+}
+.dv-meta { font-size: 11px; color: var(--gold); letter-spacing: 0.05em; margin-bottom: 10px; text-transform: uppercase; }
+
+.dv-resumo textarea { min-height: 80px; resize: vertical; font-size: 15px; line-height: 1.55; }
+
+.dv-presentes { margin-top: 10px; }
+.dv-presentes label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--parchment-dim); }
+.dv-presentes input[type="text"] {
+  background: rgba(237,226,208,0.06);
+  border: 1px solid rgba(182,138,78,0.35);
+  border-radius: 3px;
+  color: var(--parchment);
+  font-family: 'EB Garamond', serif; font-style: italic; font-size: 13px;
+  padding: 6px 9px; width: 100%; margin-top: 3px;
+}
+
+.dv-remove {
+  position: absolute; top: 14px; right: 14px;
+  background: none; border: none; color: var(--parchment-dim);
+  cursor: pointer; font-size: 13px; opacity: 0.55;
+}
+.dv-remove:hover { opacity: 1; color: #a5453f; }
+
+.dv-empty { text-align: center; color: var(--parchment-dim); font-style: italic; padding: 30px 0; }
+
+.dv-footer { display: flex; justify-content: center; margin-top: 16px; }
+.dv-save-indicator { font-size: 11px; color: var(--gold); opacity: 0; transition: opacity 0.3s ease; font-style: italic; }
+.dv-save-indicator.show { opacity: 1; }

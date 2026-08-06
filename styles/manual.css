@@ -1,0 +1,126 @@
+:root {
+  --bg-deep: #14101a;
+  --panel: #201a28;
+  --parchment: #ede2d0;
+  --parchment-dim: #cabfae;
+  --thread-blue: #3f5f7f;
+  --ink-red: #a5453f;
+  --gold: #b68a4e;
+  --gold-soft: #8f7148;
+  --ink-dark: #2b2130;
+  --seam: #5f4f52;
+}
+
+#manual-root * { box-sizing: border-box; }
+
+.mn-wrap {
+  background: var(--bg-deep);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(63,95,127,0.10), transparent 55%),
+    radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
+  padding: 36px 16px 56px;
+  font-family: 'EB Garamond', serif;
+  color: var(--parchment);
+  min-height: 100%;
+}
+
+.mn-frame { max-width: 680px; margin: 0 auto; }
+
+.mn-header { text-align: center; margin-bottom: 6px; }
+.mn-eyebrow { letter-spacing: 0.28em; font-size: 11px; text-transform: uppercase; color: var(--gold); margin: 0 0 6px; }
+.mn-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 38px; margin: 0; }
+.mn-tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--parchment-dim); margin: 6px 0 0; }
+
+.mn-seam { height: 14px; margin: 22px 0 20px; position: relative; }
+.mn-seam::after {
+  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
+  position: absolute; left: 0; right: 0; top: -6px; text-align: center;
+  letter-spacing: 6px; font-size: 9px; color: var(--seam); white-space: nowrap; overflow: hidden;
+}
+
+.mn-section {
+  background: var(--panel);
+  border: 1px solid rgba(182,138,78,0.3);
+  border-top: 4px solid var(--gold);
+  border-radius: 6px;
+  padding: 20px 22px 18px;
+  margin-bottom: 18px;
+}
+.mn-section.pista { border-top-color: var(--thread-blue); }
+.mn-section.aviso { border-top-color: var(--ink-red); }
+
+.mn-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  margin: 0 0 2px;
+}
+.mn-section h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 12px;
+  color: var(--parchment);
+}
+
+.mn-section p { font-size: 14.5px; line-height: 1.65; margin: 0 0 12px; }
+.mn-section p:last-child { margin-bottom: 0; }
+.mn-section strong { color: var(--parchment); }
+.mn-section em { color: var(--gold-soft); font-style: italic; }
+
+.mn-callout {
+  border-left: 3px solid var(--ink-red);
+  background: rgba(165,69,63,0.08);
+  padding: 10px 14px;
+  margin: 0 0 12px;
+  border-radius: 0 4px 4px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.mn-callout strong { color: #d79a94; }
+
+.mn-list { margin: 0 0 12px; padding-left: 20px; }
+.mn-list li { font-size: 14.5px; line-height: 1.6; margin-bottom: 6px; }
+.mn-list li:last-child { margin-bottom: 0; }
+
+.mn-steps { margin: 0 0 12px; padding-left: 22px; }
+.mn-steps li { font-size: 14.5px; line-height: 1.6; margin-bottom: 8px; }
+
+.mn-table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 13.5px; }
+.mn-table th, .mn-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(182,138,78,0.2); vertical-align: top; }
+.mn-table th { color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.mn-table tr:last-child td { border-bottom: none; }
+
+.mn-kit-item { margin-bottom: 14px; }
+.mn-kit-item:last-child { margin-bottom: 0; }
+.mn-kit-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--parchment);
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mn-kit-tag {
+  font-size: 10px; letter-spacing: 0.06em; text-transform: none;
+  color: var(--parchment-dim); font-style: italic; font-weight: 400;
+}
+.mn-kit-item p { font-size: 13.5px; margin: 0; }
+
+.mn-closing {
+  text-align: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--parchment-dim);
+  margin: 8px 0 0;
+}
+
+@media (max-width: 480px) {
+  .mn-title { font-size: 30px; }
+  .mn-table { font-size: 12.5px; }
+}
