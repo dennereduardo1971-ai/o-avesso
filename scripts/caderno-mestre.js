@@ -1,7 +1,7 @@
 // caderno-mestre.js — só abre pra quem conduz o Avesso (ver MESTRE em db.js).
 // Os dados são pessoais do mestre: nem aparecem pros jogadores, nem no banco.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-caderno-mestre';
 const COMPARTILHADO = false;
@@ -28,6 +28,7 @@ const save = createSaver('save-indicator');
 const user = await initPage({ escopo: 'mestre', somenteMestre: true });
 if (user) {
   await loadState();
+  ambientar();
 }
 
 async function loadState() {

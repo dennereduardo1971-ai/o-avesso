@@ -3,7 +3,7 @@
 // tabelas rápidas de improviso (só o mestre) e um bloco de anotações rápidas
 // pessoais. Os dados são exibidos em cubo/gema 3D via CSS.
 
-import { initPage, storage, createSaver, escapeHtml } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, ambientar } from './session.js';
 
 const FICHA_KEY = 'o-avesso-ficha-personagem';
 const HISTORICO_KEY = 'o-avesso-historico-rolagens';
@@ -77,6 +77,7 @@ const saveNotas = createSaver('dd-notas-save');
 const user = await initPage({ escopo: 'compartilhado', onSync: sincronizarTudo });
 if (user) {
   await sincronizarTudo();
+  ambientar();
 }
 
 async function sincronizarTudo() {

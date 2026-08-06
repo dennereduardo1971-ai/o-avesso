@@ -1,6 +1,6 @@
 // diario.js — resumo de cada sessão. Compartilhado com a mesa inteira.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-diario';
 const COMPARTILHADO = true;
@@ -12,6 +12,7 @@ const save = createSaver('dv-save-indicator');
 const user = await initPage({ escopo: 'compartilhado', onSync: loadState });
 if (user) {
   await loadState();
+  ambientar();
 }
 
 async function loadState() {

@@ -1,7 +1,7 @@
 // manual.js — Manual do Jogador. Só leitura, sem storage: as regras não mudam
 // de aparelho pra aparelho, então não precisam de banco nenhum.
 
-import { initPage } from './session.js';
+import { initPage, ambientar } from './session.js';
 
 await initPage({ escopo: 'compartilhado' });
 
@@ -154,3 +154,5 @@ document.getElementById('manual-root').innerHTML = `
     </div>
   </div>
 `;
+
+ambientar();

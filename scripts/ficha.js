@@ -1,6 +1,6 @@
 // ficha.js — Ficha da Visitante. Pessoal: cada login tem a sua, e ninguém mais lê.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-ficha-personagem';
 const COMPARTILHADO = false;
@@ -27,6 +27,7 @@ const save = createSaver('save-indicator');
 const user = await initPage({ escopo: 'pessoal' });
 if (user) {
   await loadState();
+  ambientar();
 }
 
 async function loadState() {

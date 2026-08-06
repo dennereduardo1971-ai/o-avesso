@@ -188,12 +188,19 @@ export function seamHtml() {
     </div>`;
 }
 
+// Cartões de todas as telas: o que não existir na tela atual simplesmente
+// não casa com nada, e a teia ignora.
+const FOCO_PADRAO = [
+  '.patch', '.portal-card', '.attr-card', '.kit-item', '.dv-entry',
+  '.cm-card', '.npc-card', '.mp-area', '.dd-attr', '.ct-card'
+].join(', ');
+
 /**
  * Liga a atmosfera da página: o campo de linhas ao fundo e a costura dos
  * divisores. Cada tela chama isto depois de desenhar o próprio conteúdo,
  * já que a teia precisa saber onde os cartões estão.
  */
-export function ambientar(focoSeletor = '.patch') {
+export function ambientar(focoSeletor = FOCO_PADRAO) {
   iniciarAtmosfera(focoSeletor);
   costurar();
 }

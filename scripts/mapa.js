@@ -1,7 +1,7 @@
 // mapa.js — Mapa do Avesso. Compartilhado: é o mesmo mapa pra mesa inteira.
 // A névoa, porém, é do mestre: só ele revela (ou volta a esconder) uma região.
 
-import { initPage, storage, createSaver, escapeHtml } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, ambientar } from './session.js';
 
 const STORAGE_KEY = 'mapa-avesso';
 const COMPARTILHADO = true;
@@ -36,6 +36,7 @@ const save = createSaver('mp-save');
 const user = await initPage({ escopo: 'compartilhado', onSync: loadState });
 if (user) {
   await loadState();
+  ambientar();
 }
 
 function areaById(id) { return AREAS.find(a => a.id === id); }

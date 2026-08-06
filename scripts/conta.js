@@ -2,7 +2,7 @@
 // senha. O login em si (o email fictício por baixo dos panos) não pode ser
 // trocado por aqui — ver a nota na própria tela.
 
-import { initPage, createSaver, escapeHtml, escapeAttr } from './session.js';
+import { initPage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
 import { auth, setNomeExibicao } from './db.js';
 
 let nomeExibicao = '';
@@ -12,6 +12,7 @@ const user = await initPage({ escopo: 'pessoal' });
 if (user) {
   nomeExibicao = user.nomeExibicao || user.username;
   render();
+  ambientar();
 }
 
 function render() {
