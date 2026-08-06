@@ -1,10 +1,22 @@
 // caderno-mestre.js — só abre pra quem conduz o Avesso (ver MESTRE em db.js).
 // Os dados são pessoais do mestre: nem aparecem pros jogadores, nem no banco.
+//
+// É daqui que o mundo se mexe. O botão "virar a página" fecha a sessão: olha
+// o estado da mesa, propõe o que o Avesso faria entre um encontro e outro
+// (pulso.js) e espera o sim de quem conduz. Nada acontece sem esse sim — não
+// tem tarefa agendada, não tem servidor decidindo enredo de madrugada.
 
 import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
+import { carregarElenco, salvarElenco, arco as arcoDe } from './elenco.js';
+import { carregarVisitantes } from './visitantes.js';
+import { proporVirada, aplicarProposta } from './pulso.js';
+import { registrarEntreSessoes } from './diario-store.js';
+import { configurado as avisosConfigurados, avisarMesa } from './avisos.js';
 
 const STORAGE_KEY = 'o-avesso-caderno-mestre';
 const COMPARTILHADO = false;
+const MAPA_KEY = 'mapa-avesso';
+const HISTORICO_KEY = 'o-avesso-historico-rolagens';
 
 const defaultState = {
   sessaoAtual: '2',
@@ -23,6 +35,14 @@ const defaultState = {
 };
 
 let state = JSON.parse(JSON.stringify(defaultState));
+
+// o pulso do mundo vive fora do caderno: o elenco é compartilhado
+let elenco = { moradores: [], bruto: { estado: {}, extras: [], relacoes: {}, pulso: {} } };
+let propostas = [];
+let pulsoOcupado = false;
+let pulsoAviso = null;
+let aprovadasAgora = []; // o que virou fato nesta virada, pra poder avisar a mesa
+
 const save = createSaver('save-indicator');
 
 const user = await initPage({ escopo: 'mestre', somenteMestre: true });
@@ -42,6 +62,9 @@ async function loadState() {
         state.verdades = JSON.parse(JSON.stringify(defaultState.verdades));
       }
     }
+  } catch (e) {}
+  try {
+    elenco = await carregarElenco();
   } catch (e) {}
   render();
 }
@@ -106,6 +129,11 @@ function render() {
 
           ${seamHtml()}
 
+          <p class="section-label">Virar a Página</p>
+          ${renderPulso()}
+
+          ${seamHtml()}
+
           <p class="section-label">
             <span>Mundo Persistente</span>
           </p>
@@ -131,6 +159,216 @@ function render() {
   renderVerdades();
   renderLog();
   attachStaticHandlers();
+}
+
+// ---- pulso do mundo --------------------------------------------------------
+
+function renderPulso() {
+  const virada = (elenco.bruto.pulso && elenco.bruto.pulso.virada) || 0;
+  return `
+    <div class="card pulso-card">
+      <p class="pulso-explica">
+        Ao fechar a sessão, o Avesso propõe o que faria enquanto ninguém está
+        olhando. Nada aqui acontece sozinho: cada proposta espera o seu sim.
+        O que você aprovar muda o estado do morador e vira página no Diário —
+        o que você recusar fica quieto por duas viradas.
+      </p>
+      <div class="pulso-topo">
+        <span class="pulso-contador">${virada === 0 ? 'nenhuma página virada ainda' : `${virada}ª virada`}</span>
+        <button class="mini-btn pulso-btn" id="btn-virar" ${pulsoOcupado ? 'disabled' : ''}>
+          ${pulsoOcupado ? 'ouvindo o Avesso...' : 'virar a página'}
+        </button>
+      </div>
+
+      ${pulsoAviso ? `<p class="pulso-aviso ${pulsoAviso.tom}">${escapeHtml(pulsoAviso.texto)}</p>` : ''}
+
+      ${renderAvisarMesa()}
+
+      ${propostas.length > 0 ? `
+        <div class="pulso-fila">
+          ${propostas.map((p, i) => {
+            const m = elenco.moradores.find((x) => x.id === p.moradorId);
+            return `
+              <div class="pulso-item">
+                <p class="pulso-item-titulo">${escapeHtml(p.titulo)}</p>
+                <p class="pulso-item-texto">${escapeHtml(p.texto)}</p>
+                <p class="pulso-item-motivo">porque: ${escapeHtml(p.motivo)}</p>
+                <p class="pulso-item-efeito">${escapeHtml(descreverEfeito(p, m))}</p>
+                <div class="pulso-item-acoes">
+                  <button class="mini-btn aprovar" data-aprovar="${i}">aprovar</button>
+                  <button class="mini-btn" data-descartar="${i}">não aconteceu</button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+/**
+ * Bater na porta de quem não está com o app aberto. Aparece só depois de
+ * você aprovar alguma coisa: avisar que nada aconteceu não é aviso, é ruído.
+ */
+function renderAvisarMesa() {
+  if (aprovadasAgora.length === 0) return '';
+
+  if (!avisosConfigurados()) {
+    return `
+      <p class="pulso-aviso">
+        ${aprovadasAgora.length} ${aprovadasAgora.length === 1 ? 'coisa aconteceu' : 'coisas aconteceram'}
+        no Avesso e já ${aprovadasAgora.length === 1 ? 'está' : 'estão'} no Diário.
+        Pra avisar quem não está com o app aberto, falta publicar os avisos
+        (veja gerar-chaves-push.js).
+      </p>
+    `;
+  }
+
+  return `
+    <div class="pulso-avisar">
+      <span class="pulso-avisar-conta">
+        ${aprovadasAgora.length} ${aprovadasAgora.length === 1 ? 'página escrita' : 'páginas escritas'} nesta virada
+      </span>
+      <button class="mini-btn pulso-btn" id="btn-avisar" ${pulsoOcupado ? 'disabled' : ''}>
+        avisar a mesa
+      </button>
+    </div>
+  `;
+}
+
+async function avisar() {
+  pulsoOcupado = true;
+  render();
+
+  try {
+    const quantas = aprovadasAgora.length;
+    const resultado = await avisarMesa({
+      titulo: 'O Avesso se mexeu',
+      texto: quantas === 1
+        ? aprovadasAgora[0]
+        : `${quantas} coisas mudaram enquanto vocês não estavam olhando.`
+    });
+    pulsoAviso = {
+      tom: 'calmo',
+      texto: resultado && resultado.enviados > 0
+        ? `a mesa foi avisada (${resultado.enviados} ${resultado.enviados === 1 ? 'aparelho' : 'aparelhos'})`
+        : 'ninguém ligou os avisos ainda — o Diário continua lá pra quando abrirem'
+    };
+  } catch (e) {
+    pulsoAviso = { tom: 'erro', texto: 'não deu pra avisar a mesa agora — o Diário já está escrito, de todo jeito' };
+  }
+
+  pulsoOcupado = false;
+  render();
+}
+
+/** O que muda de fato, em português, pra decidir sem abrir o console. */
+function descreverEfeito(proposta, morador) {
+  const e = proposta.efeito || {};
+  const partes = [];
+  if (e.revelado) partes.push('passa a aparecer pra mesa');
+  if (e.postura) partes.push(`postura geral vira ${e.postura}`);
+  if (typeof e.arco === 'number') partes.push(`arco vai pra "${arcoDe(e.arco).nome}"`);
+  if (e.humor) partes.push(`humor: "${e.humor}"`);
+  const quem = morador ? morador.nome : proposta.moradorId;
+  return partes.length ? `${quem}: ${partes.join(' · ')}` : `${quem}: só vira página no Diário`;
+}
+
+async function virarPagina() {
+  pulsoOcupado = true;
+  pulsoAviso = null;
+  aprovadasAgora = [];
+  render();
+
+  try {
+    const [mapa, historico, visitantes] = await Promise.all([
+      storage.get(MAPA_KEY, true).catch(() => null),
+      storage.get(HISTORICO_KEY, true).catch(() => null),
+      carregarVisitantes()
+    ]);
+
+    elenco = await carregarElenco();
+    propostas = proporVirada({
+      moradores: elenco.moradores,
+      relacoes: elenco.bruto.relacoes,
+      pulso: elenco.bruto.pulso,
+      mapa: mapa || {},
+      historico: (historico && historico.entries) || [],
+      visitantes: visitantes
+    });
+
+    // a virada conta mesmo quando não sai proposta nenhuma: é ela que marca
+    // "daqui pra frente é outra sessão" pro histórico de rolagens
+    elenco.bruto.pulso.virada = (elenco.bruto.pulso.virada || 0) + 1;
+    elenco.bruto.pulso.ultima = new Date().toISOString();
+    await salvarElenco(elenco.bruto);
+
+    if (propostas.length === 0) {
+      pulsoAviso = { tom: 'calmo', texto: 'o Avesso não mexeu em nada desta vez — a mesa deixou tudo no lugar' };
+    }
+  } catch (e) {
+    pulsoAviso = { tom: 'erro', texto: 'não deu pra ouvir o Avesso agora — tente de novo daqui a pouco' };
+  }
+
+  pulsoOcupado = false;
+  render();
+}
+
+async function aprovarProposta(indice) {
+  const proposta = propostas[indice];
+  if (!proposta) return;
+
+  try {
+    const morador = elenco.moradores.find((m) => m.id === proposta.moradorId);
+    const atual = elenco.bruto.estado[proposta.moradorId] || {
+      postura: morador ? morador.postura : 'reservado',
+      humor: morador ? morador.humor : '',
+      revelado: morador ? morador.revelado : false,
+      arco: morador ? morador.arco : 0,
+      arcoFechado: morador ? Boolean(morador.arcoFechado) : false
+    };
+
+    elenco.bruto.estado[proposta.moradorId] = aplicarProposta(proposta, atual);
+    await salvarElenco(elenco.bruto);
+
+    await registrarEntreSessoes({
+      titulo: proposta.titulo,
+      resumo: proposta.diario,
+      virada: elenco.bruto.pulso.virada
+    });
+
+    // o mestre também fica com o registro no próprio caderno
+    state.mundoLog.unshift({
+      data: `virada ${elenco.bruto.pulso.virada}`,
+      texto: `${proposta.titulo} — ${proposta.diario}`
+    });
+    scheduleSave();
+
+    elenco = await carregarElenco();
+    propostas.splice(indice, 1);
+    aprovadasAgora.push(proposta.diario || proposta.titulo);
+    pulsoAviso = { tom: 'calmo', texto: `aconteceu: ${proposta.titulo}. Já está no Diário da mesa.` };
+  } catch (e) {
+    pulsoAviso = { tom: 'erro', texto: 'a costura não pegou — nada foi aplicado' };
+  }
+  render();
+}
+
+async function descartarProposta(indice) {
+  const proposta = propostas[indice];
+  if (!proposta) return;
+
+  try {
+    elenco.bruto.pulso.descartados = elenco.bruto.pulso.descartados || {};
+    elenco.bruto.pulso.descartados[proposta.chave] = elenco.bruto.pulso.virada;
+    await salvarElenco(elenco.bruto);
+    propostas.splice(indice, 1);
+    pulsoAviso = { tom: 'calmo', texto: 'não aconteceu — o Avesso não insiste nisso nas próximas duas viradas' };
+  } catch (e) {
+    pulsoAviso = { tom: 'erro', texto: 'não deu pra guardar a recusa agora' };
+  }
+  render();
 }
 
 function renderNpcs() {
@@ -237,6 +475,16 @@ function attachStaticHandlers() {
     render();
     scheduleSave();
   });
+  document.getElementById('btn-virar').addEventListener('click', virarPagina);
+  const btnAvisar = document.getElementById('btn-avisar');
+  if (btnAvisar) btnAvisar.addEventListener('click', avisar);
+  document.querySelectorAll('[data-aprovar]').forEach(btn => {
+    btn.addEventListener('click', () => aprovarProposta(parseInt(btn.getAttribute('data-aprovar'), 10)));
+  });
+  document.querySelectorAll('[data-descartar]').forEach(btn => {
+    btn.addEventListener('click', () => descartarProposta(parseInt(btn.getAttribute('data-descartar'), 10)));
+  });
+
   document.getElementById('add-log').addEventListener('click', () => {
     state.mundoLog.push({ data: '', texto: '' });
     render();

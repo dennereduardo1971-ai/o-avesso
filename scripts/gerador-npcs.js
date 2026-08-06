@@ -1,7 +1,13 @@
 // gerador-npcs.js — personagens de improviso, só pro mestre. A lista de
 // guardados é dele; não abre pros jogadores nem aparece no hub deles.
+//
+// Esta tela é a porta de entrada do elenco: personagem gerado é descartável
+// até a mesa mexer com ele de novo. Aí o mestre promove, e ele vira morador
+// de verdade (com lugar no mapa, postura e estado) na tela de Moradores.
+// O elenco cresce pelo que a mesa usou, não por um número escolhido de véspera.
 
 import { initPage, storage, createSaver, escapeHtml, ambientar, seamHtml } from './session.js';
+import { promoverNpc } from './elenco.js';
 
 const STORAGE_KEY = 'o-avesso-gerador-npcs';
 const COMPARTILHADO = false;
@@ -50,6 +56,7 @@ const segredos = [
 
 let saved = [];
 let current = null;
+let aviso = null; // { texto, tom } — resposta da última promoção
 const save = createSaver('gn-save-indicator', 400);
 
 const user = await initPage({ escopo: 'mestre', somenteMestre: true });
@@ -79,6 +86,7 @@ function pick(arr, excludeVal) {
 }
 
 function gerar() {
+  aviso = null;
   current = {
     nome: pick(nomes, current ? current.nome : null),
     traco: pick(tracos, current ? current.traco : null),
@@ -97,6 +105,28 @@ function salvarAtual() {
 function removerSalvo(idx) {
   saved.splice(idx, 1);
   scheduleSave();
+  render();
+}
+
+/**
+ * Sobe um personagem gerado pro elenco fixo. Ele sai da lista de improviso
+ * (o lugar de quem ainda é descartável) e passa a existir no Avesso: o
+ * segredo vai pro bloco de bastidor, e a mesa só o conhece quando você
+ * apresentar, lá na tela de Moradores.
+ */
+async function promover(npc, idxNaLista) {
+  try {
+    await promoverNpc(npc);
+    if (typeof idxNaLista === 'number') saved.splice(idxNaLista, 1);
+    else current = null;
+    scheduleSave();
+    aviso = {
+      tom: 'ok',
+      texto: `${npc.nome} entrou no elenco. Dê um posto e um lugar a ele em Moradores do Avesso.`
+    };
+  } catch (e) {
+    aviso = { tom: 'erro', texto: 'o elenco não aceitou a costura agora — tente de novo daqui a pouco' };
+  }
   render();
 }
 
@@ -126,13 +156,17 @@ function render() {
             </div>
             <div class="gn-actions">
               <button class="gn-mini-btn save" id="btn-salvar">guardar na lista</button>
+              <button class="gn-mini-btn promover" id="btn-promover">promover a morador</button>
               <button class="gn-mini-btn" id="btn-outro">gerar outro</button>
             </div>
           </div>
         ` : ''}
 
+        ${aviso ? `<p class="gn-aviso ${aviso.tom}">${escapeHtml(aviso.texto)}</p>` : ''}
+
         ${seamHtml()}
         <p class="gn-section-label">Guardados para usar depois</p>
+        <p class="gn-section-hint">quando a mesa esbarrar duas vezes na mesma pessoa, promova: ela vira morador de verdade</p>
         <div class="gn-saved-list">
           ${saved.length === 0 ? '<p class="gn-empty">nenhum personagem guardado ainda</p>' : saved.map((n, i) => `
             <div class="gn-saved-item">
@@ -140,6 +174,7 @@ function render() {
               <div class="sv-name">${escapeHtml(n.nome)}</div>
               <div class="sv-line">${escapeHtml(n.traco)}</div>
               <div class="sv-line">${escapeHtml(n.segredo)}</div>
+              <button class="gn-mini-btn promover" data-promover="${i}">promover a morador</button>
             </div>
           `).join('')}
         </div>
@@ -153,8 +188,15 @@ function render() {
   if (current) {
     document.getElementById('btn-salvar').addEventListener('click', salvarAtual);
     document.getElementById('btn-outro').addEventListener('click', gerar);
+    document.getElementById('btn-promover').addEventListener('click', () => promover(current, null));
   }
   root.querySelectorAll('[data-remove]').forEach(btn => {
     btn.addEventListener('click', () => removerSalvo(parseInt(btn.getAttribute('data-remove'), 10)));
+  });
+  root.querySelectorAll('[data-promover]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.getAttribute('data-promover'), 10);
+      promover(saved[i], i);
+    });
   });
 }

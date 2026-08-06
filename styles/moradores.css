@@ -1,0 +1,283 @@
+/* paleta comum: styles/shared.css */
+
+#moradores-root * { box-sizing: border-box; }
+
+.mr-wrap {
+  background-image:
+    radial-gradient(ellipse at 15% 0%, rgba(165,69,63,0.10), transparent 55%),
+    radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
+  padding: 36px 16px 48px;
+  font-family: 'EB Garamond', serif;
+  color: var(--parchment);
+  min-height: 100%;
+}
+
+.mr-frame { max-width: 640px; margin: 0 auto; }
+
+.mr-header { text-align: center; margin-bottom: 6px; }
+.mr-eyebrow { letter-spacing: 0.28em; font-size: 11px; text-transform: uppercase; color: var(--gold); margin: 0 0 6px; }
+.mr-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 36px; margin: 0; }
+.mr-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--parchment-dim); margin: 4px 0 0; }
+.mr-note { font-size: 12px; color: var(--parchment-dim); margin: 10px 0 0; font-style: italic; }
+
+/* ---- legenda das posturas ---- */
+
+.mr-legenda {
+  background: var(--panel);
+  border: 1px solid rgba(182,138,78,0.28);
+  border-top: 4px solid var(--gold);
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+}
+.mr-legenda-titulo {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+.mr-legenda-linha {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0 0 7px;
+  font-size: 13px;
+}
+.mr-legenda-texto { color: var(--parchment-dim); flex: 1 1 200px; }
+.mr-legenda-rodape {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--seam);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--parchment-dim);
+}
+
+/* ---- etiqueta de postura ---- */
+
+.mr-postura {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.mr-postura.acolhedor { background: rgba(63,95,127,0.22); border-color: rgba(63,95,127,0.55); color: #b9d0e4; }
+.mr-postura.reservado { background: rgba(182,138,78,0.16); border-color: rgba(182,138,78,0.5); color: #e3cb9f; }
+.mr-postura.arredio   { background: rgba(165,69,63,0.20); border-color: rgba(165,69,63,0.6); color: #e8b0aa; }
+
+/* ---- regiões ---- */
+
+.mr-regiao { margin-bottom: 26px; }
+.mr-regiao-titulo {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--seam);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mr-regiao-icone { font-size: 17px; }
+
+.mr-lista { display: flex; flex-direction: column; gap: 12px; }
+
+/* ---- cartão de morador ---- */
+
+.mr-card {
+  background: var(--panel);
+  border: 1px solid rgba(182,138,78,0.28);
+  border-top: 4px solid var(--ink-red);
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.28);
+  overflow: hidden;
+}
+.mr-card.oculto { opacity: 0.72; border-top-style: dashed; }
+.mr-card.aberto { border-color: rgba(182,138,78,0.55); }
+
+.mr-card-topo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mr-card-topo:hover { background: rgba(182,138,78,0.06); }
+
+.mr-icone { font-size: 26px; line-height: 1; }
+.mr-identidade { flex: 1; min-width: 0; }
+.mr-nome {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 19px;
+}
+.mr-papel { display: block; font-size: 12.5px; color: var(--parchment-dim); font-style: italic; }
+
+.mr-flag {
+  margin: 0;
+  padding: 4px 15px 8px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--parchment-dim);
+}
+
+.mr-corpo { padding: 4px 15px 16px; border-top: 1px dashed var(--seam); }
+.mr-corpo[hidden] { display: none; }
+
+.mr-linha { margin: 10px 0 0; font-size: 14px; line-height: 1.5; }
+.mr-rot {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+.mr-humor {
+  margin: 12px 0 0;
+  padding: 9px 12px;
+  border-left: 2px solid var(--thread-blue);
+  background: rgba(63,95,127,0.10);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+}
+.mr-conselho {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--parchment-dim);
+  font-style: italic;
+}
+
+.mr-arco-chip {
+  margin: 12px 0 0;
+  padding: 7px 11px;
+  border-radius: 4px;
+  border-left: 2px solid var(--gold);
+  background: rgba(182,138,78,0.10);
+  font-size: 12.5px;
+  color: var(--parchment-dim);
+}
+
+/* ---- bloco do mestre ---- */
+
+.mr-mestre {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--ink-red);
+}
+.mr-mestre-label {
+  margin: 0 0 12px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-red);
+}
+
+.mr-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.mr-toggle input { accent-color: var(--gold); width: 16px; height: 16px; }
+
+.mr-campo { margin-bottom: 12px; }
+.mr-campo label {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.mr-campo input,
+.mr-campo select,
+.mr-campo textarea {
+  width: 100%;
+  background: var(--panel-raised);
+  border: 1px solid rgba(182,138,78,0.3);
+  border-radius: 4px;
+  color: var(--parchment);
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.mr-campo textarea { min-height: 64px; resize: vertical; line-height: 1.5; }
+.mr-campo input:focus,
+.mr-campo select:focus,
+.mr-campo textarea:focus { outline: none; border-color: var(--gold); }
+
+/* ---- grade de relações (morador × visitante) ---- */
+
+.mr-relacoes { display: flex; flex-direction: column; gap: 8px; }
+.mr-relacao {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.16);
+  border-left: 2px solid var(--thread-blue);
+}
+.mr-relacao-nome {
+  grid-column: 1 / -1;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--parchment);
+}
+.mr-relacao input,
+.mr-relacao select { font-size: 13px; padding: 6px 8px; }
+.mr-relacao input { grid-column: 1 / -1; }
+.mr-relacoes-vazio {
+  margin: 0;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--parchment-dim);
+}
+
+.mr-remover {
+  background: none;
+  border: 1px solid rgba(165,69,63,0.55);
+  color: #e8b0aa;
+  border-radius: 4px;
+  padding: 7px 12px;
+  font-family: 'EB Garamond', serif;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mr-remover:hover { background: rgba(165,69,63,0.15); }
+
+.mr-empty {
+  text-align: center;
+  color: var(--parchment-dim);
+  font-style: italic;
+  padding: 30px 0;
+}
+
+.mr-save-indicator {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  opacity: 0;
+  transition: opacity 0.25s;
+  margin: 14px 0 0;
+}
+.mr-save-indicator.show { opacity: 1; }

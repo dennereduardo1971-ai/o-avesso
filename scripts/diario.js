@@ -1,31 +1,30 @@
 // diario.js — resumo de cada sessão. Compartilhado com a mesa inteira.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
-
-const STORAGE_KEY = 'o-avesso-diario';
-const COMPARTILHADO = true;
+import { initPage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
+import { carregarDiario, salvarDiario, DIARIO_KEY } from './diario-store.js';
 
 let entries = [];
 let idCounter = 1;
 const save = createSaver('dv-save-indicator');
 
-const user = await initPage({ escopo: 'compartilhado', onSync: loadState });
+const user = await initPage({
+  escopo: 'compartilhado',
+  onSync: loadState,
+  escutar: [DIARIO_KEY]
+});
 if (user) {
   await loadState();
   ambientar();
 }
 
 async function loadState() {
-  try {
-    const saved = await storage.get(STORAGE_KEY, COMPARTILHADO);
-    entries = saved && Array.isArray(saved.entries) ? saved.entries : [];
-    entries.forEach(e => { if (e.id >= idCounter) idCounter = e.id + 1; });
-  } catch (e) {}
+  entries = await carregarDiario();
+  entries.forEach(e => { if (e.id >= idCounter) idCounter = e.id + 1; });
   render();
 }
 
 function scheduleSave() {
-  save(() => storage.set(STORAGE_KEY, { entries: entries }, COMPARTILHADO));
+  save(() => salvarDiario(entries));
 }
 
 function addEntry() {
@@ -83,8 +82,9 @@ function renderEntries() {
     return;
   }
   wrap.innerHTML = entries.map(e => `
-    <div class="dv-entry">
+    <div class="dv-entry ${e.tipo === 'pulso' ? 'pulso' : ''}">
       <button class="dv-remove" data-remove="${e.id}">✕</button>
+      ${e.tipo === 'pulso' ? '<span class="dv-badge">o Avesso se mexeu sozinho</span>' : ''}
       <div class="dv-entry-top">
         <div class="dv-field numero">
           <label>Nº</label>

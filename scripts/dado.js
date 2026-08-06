@@ -2,19 +2,22 @@
 // a própria Ficha da Visitante), um d10 solto, histórico de rolagens da mesa,
 // tabelas rápidas de improviso (só o mestre) e um bloco de anotações rápidas
 // pessoais. Os dados são exibidos em cubo/gema 3D via CSS.
+//
+// As regras em si não moram mais aqui: saíram pra scripts/regras.js, que é o
+// mesmo motor usado pelas outras telas. Esta página é só a mesa onde o dado
+// cai — quem diz o que o número significa é o Manual, por meio de regras.js.
 
 import { initPage, storage, createSaver, escapeHtml, ambientar, seamHtml } from './session.js';
+import {
+  ATRIBUTOS, rolarD6, rolarD10, veredito, testarAtributo,
+  nomeAtributo, postura as posturaDe, exigenciaDePostura
+} from './regras.js';
+import { carregarElenco, relacaoCom, ELENCO_KEY } from './elenco.js';
 
 const FICHA_KEY = 'o-avesso-ficha-personagem';
 const HISTORICO_KEY = 'o-avesso-historico-rolagens';
 const NOTAS_KEY = 'o-avesso-notas-rapidas';
 const MAX_HISTORICO = 30;
-
-const ATRIBUTOS = [
-  { chave: 'agulha', nome: 'Agulha', icone: '🪡' },
-  { chave: 'dedal', nome: 'Dedal', icone: '🧵' },
-  { chave: 'linha', nome: 'Linha', icone: '🧶' }
-];
 
 const TABELA_MESTRE_D6 = [
   'Um retrato na parede pisca — ou foi impressão sua.',
@@ -58,6 +61,9 @@ const FACE_FRENTE = {
 };
 
 let ficha = null;
+let moradores = [];
+let relacoes = {};
+let moradorEscolhido = '';
 let atributoEscolhido = 'agulha';
 let ultimoResultadoD6 = null;
 let ultimoResultadoD10 = null;
@@ -74,15 +80,45 @@ let gemPendingAnim = null;
 
 const saveNotas = createSaver('dd-notas-save');
 
-const user = await initPage({ escopo: 'compartilhado', onSync: sincronizarTudo });
+const user = await initPage({
+  escopo: 'compartilhado',
+  onSync: sincronizarTudo,
+  escutar: [HISTORICO_KEY, ELENCO_KEY]
+});
 if (user) {
   await sincronizarTudo();
   ambientar();
 }
 
 async function sincronizarTudo() {
-  await Promise.all([carregarFicha(), carregarHistorico(), carregarNotas()]);
+  await Promise.all([carregarFicha(), carregarHistorico(), carregarNotas(), carregarMoradores()]);
   render();
+}
+
+// Só entram na lista quem a mesa já conhece — o mestre vê o elenco inteiro,
+// como na tela de Moradores.
+async function carregarMoradores() {
+  try {
+    const elenco = await carregarElenco();
+    moradores = elenco.moradores.filter((m) => user.isMestre || m.revelado);
+    relacoes = elenco.bruto.relacoes;
+  } catch (e) {
+    moradores = [];
+    relacoes = {};
+  }
+  if (moradorEscolhido && !moradores.some((m) => m.id === moradorEscolhido)) {
+    moradorEscolhido = '';
+  }
+}
+
+function moradorAtual() {
+  return moradores.find((m) => m.id === moradorEscolhido) || null;
+}
+
+// A postura que vale é a que ele tem com QUEM está rolando: se existe relação
+// própria com esta visitante, ela fala mais alto que a postura geral da mesa.
+function relacaoAtual(m) {
+  return relacaoCom(m, user.username, relacoes);
 }
 
 async function carregarFicha() {
@@ -112,6 +148,9 @@ async function carregarNotas() {
 }
 
 function registrarHistorico(entry) {
+  // a hora entra aqui porque o pulso do mundo (pulso.js) precisa saber o que
+  // aconteceu desde a última virada de página, e não a sessão inteira
+  entry.em = new Date().toISOString();
   historico = [entry, ...historico].slice(0, MAX_HISTORICO);
   storage.set(HISTORICO_KEY, { entries: historico }, true).catch(() => {});
 }
@@ -119,20 +158,6 @@ function registrarHistorico(entry) {
 function valorAtributo(chave) {
   const bruto = ficha ? parseInt(ficha[chave], 10) : NaN;
   return isNaN(bruto) ? null : bruto;
-}
-
-function rolarD6() {
-  return 1 + Math.floor(Math.random() * 6);
-}
-
-function rolarD10() {
-  return 1 + Math.floor(Math.random() * 10);
-}
-
-function veredito(total) {
-  if (total >= 6) return { classe: 'sucesso', rotulo: 'sucesso limpo', desc: 'a pista, a ação ou a resposta vêm sem preço.' };
-  if (total >= 4) return { classe: 'custo', rotulo: 'sucesso com custo', desc: 'o mestre narra uma complicação.' };
-  return { classe: 'falha', rotulo: 'falha', desc: 'se era teste de Linha, perde 1 ponto de Linha da Lógica.' };
 }
 
 function armarGiroCubo(valor) {
@@ -153,30 +178,32 @@ function armarGiroGema() {
   gemRest = { x: to.x % 360, y: to.y % 360 };
 }
 
-function testarAtributo() {
+function rolarTeste() {
   const valor = valorAtributo(atributoEscolhido);
   if (valor === null) return;
-  const dado = rolarD6();
-  const total = dado + valor;
-  ultimoResultadoD6 = { dado: dado, atributo: atributoEscolhido, valor: valor, total: total };
-  armarGiroCubo(dado);
-  render();
 
-  const nomeAttr = ATRIBUTOS.find(a => a.chave === atributoEscolhido).nome;
-  const v = veredito(total);
+  const r = testarAtributo(atributoEscolhido, valor);
+  ultimoResultadoD6 = r;
+  armarGiroCubo(r.dado);
+
+  // registrar antes de desenhar: senão a rolagem que acabou de sair só
+  // aparecia no histórico depois que outra coisa redesenhasse a tela
+  const alvo = moradorAtual();
   registrarHistorico({
     usuario: user.nomeExibicao || user.username,
     tipo: 'atributo',
-    label: `1d6 (${dado}) + ${nomeAttr} (+${valor}) = ${total}`,
-    veredito: v.rotulo
+    label: r.formula,
+    diante: alvo ? alvo.nome : null,
+    veredito: r.veredito.rotulo
   });
+
+  render();
 }
 
 function rolarD10Solto() {
   const dado = rolarD10();
   ultimoResultadoD10 = dado;
   armarGiroGema();
-  render();
 
   registrarHistorico({
     usuario: user.nomeExibicao || user.username,
@@ -184,6 +211,8 @@ function rolarD10Solto() {
     label: `1d10 = ${dado}`,
     veredito: null
   });
+
+  render();
 }
 
 function rolarMestreD6() {
@@ -226,6 +255,8 @@ function render() {
           <p class="dd-section-hint">escolha o atributo, role, e veja o veredito segundo o Manual do Jogador</p>
 
           ${temFicha ? `
+            ${renderDianteDeQuem()}
+
             <div class="dd-attr-picker">
               ${ATRIBUTOS.map(a => {
                 const valor = valorAtributo(a.chave);
@@ -295,16 +326,58 @@ function render() {
   animarGemaSePreciso();
 }
 
+// Com quem a Visitante está lidando. A postura do morador não soma nada no
+// dado — ela diz se aquela informação sai na conversa (Regra de Ouro), sai
+// pela regra normal, ou vira "agir sob risco". Ver regras.js.
+function renderDianteDeQuem() {
+  if (moradores.length === 0) return '';
+
+  const alvo = moradorAtual();
+  const rel = alvo ? relacaoAtual(alvo) : null;
+  const p = rel ? posturaDe(rel.postura) : null;
+  const exigencia = rel ? exigenciaDePostura(rel.postura) : 'comum';
+
+  return `
+    <div class="dd-diante">
+      <label class="dd-diante-label" for="dd-morador">Diante de quem</label>
+      <select id="dd-morador" class="dd-diante-select">
+        <option value="">ninguém em especial — cena solta</option>
+        ${moradores.map(m => `
+          <option value="${escapeHtml(m.id)}" ${moradorEscolhido === m.id ? 'selected' : ''}>
+            ${m.icone} ${escapeHtml(m.nome)}
+          </option>
+        `).join('')}
+      </select>
+
+      ${alvo ? `
+        <div class="dd-diante-aviso ${exigencia}">
+          <span class="dd-diante-postura">${p.icone} ${p.nome}${rel.propria ? ' · com você' : ''}</span>
+          <p>${escapeHtml(p.naMesa)}</p>
+          ${rel.propria
+            ? '<p class="dd-diante-extra">é assim com você — com o resto da mesa pode ser outra coisa.</p>'
+            : ''}
+          ${exigencia === 'entrega'
+            ? '<p class="dd-diante-extra">se a informação é essencial pro caso, não role: ele conta.</p>'
+            : ''}
+          ${exigencia === 'risco'
+            ? '<p class="dd-diante-extra">isto é o quarto movimento da investigação — agir sob risco.</p>'
+            : ''}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
 function renderResultadoD6() {
   const r = ultimoResultadoD6;
-  const v = veredito(r.total);
-  const nomeAttr = ATRIBUTOS.find(a => a.chave === r.atributo).nome;
+  const alvo = moradorAtual();
   return `
     <div class="dd-result">
-      <p class="dd-formula">1d6 (${r.dado}) + ${escapeHtml(nomeAttr)} (+${r.valor})</p>
+      <p class="dd-formula">1d6 (${r.dado}) + ${escapeHtml(nomeAtributo(r.atributo))} (+${r.valor})</p>
       <p class="dd-total">${r.total}</p>
-      <span class="dd-veredito ${v.classe}">${v.rotulo}</span>
-      <p class="dd-veredito-desc">${v.desc}</p>
+      <span class="dd-veredito ${r.veredito.classe}">${r.veredito.rotulo}</span>
+      <p class="dd-veredito-desc">${r.veredito.desc}</p>
+      ${alvo ? `<p class="dd-result-diante">diante de ${escapeHtml(alvo.nome)}</p>` : ''}
     </div>
   `;
 }
@@ -338,6 +411,7 @@ function renderHistorico() {
         <div class="dd-history-item">
           <span class="dd-history-user">${escapeHtml(h.usuario)}</span>
           <span class="dd-history-label">${escapeHtml(h.label)}</span>
+          ${h.diante ? `<span class="dd-history-diante">diante de ${escapeHtml(h.diante)}</span>` : ''}
           ${h.veredito ? `<span class="dd-history-veredito">${escapeHtml(h.veredito)}</span>` : ''}
         </div>
       `).join('')}
@@ -383,7 +457,15 @@ function attachHandlers() {
   });
 
   const btnD6 = document.getElementById('btn-rolar-d6');
-  if (btnD6) btnD6.addEventListener('click', testarAtributo);
+  if (btnD6) btnD6.addEventListener('click', rolarTeste);
+
+  const selMorador = document.getElementById('dd-morador');
+  if (selMorador) {
+    selMorador.addEventListener('change', (e) => {
+      moradorEscolhido = e.target.value;
+      render();
+    });
+  }
 
   const btnD10 = document.getElementById('btn-rolar-d10');
   if (btnD10) btnD10.addEventListener('click', rolarD10Solto);

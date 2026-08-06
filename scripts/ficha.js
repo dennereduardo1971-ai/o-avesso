@@ -1,6 +1,7 @@
 // ficha.js — Ficha da Visitante. Pessoal: cada login tem a sua, e ninguém mais lê.
 
 import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
+import { clampAtributo } from './regras.js';
 
 const STORAGE_KEY = 'o-avesso-ficha-personagem';
 const COMPARTILHADO = false;
@@ -48,12 +49,6 @@ async function loadState() {
 
 function scheduleSave() {
   save(() => storage.set(STORAGE_KEY, state, COMPARTILHADO));
-}
-
-function clamp14(v) {
-  let n = parseInt(v, 10);
-  if (isNaN(n)) n = 1;
-  return Math.max(1, Math.min(4, n));
 }
 
 function render() {
@@ -170,7 +165,7 @@ function attachHandlers() {
   ['agulha','dedal','linha'].forEach(attr => {
     const el = document.getElementById('f-' + attr);
     el.addEventListener('input', e => { state[attr] = e.target.value; scheduleSave(); });
-    el.addEventListener('blur', e => { state[attr] = String(clamp14(e.target.value)); render(); scheduleSave(); });
+    el.addEventListener('blur', e => { state[attr] = String(clampAtributo(e.target.value)); render(); scheduleSave(); });
   });
 
   document.querySelectorAll('.spool').forEach(spool => {

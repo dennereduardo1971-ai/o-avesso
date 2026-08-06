@@ -2,44 +2,26 @@
 // A névoa, porém, é do mestre: só ele revela (ou volta a esconder) uma região.
 
 import { initPage, storage, createSaver, escapeHtml, ambientar, seamHtml } from './session.js';
+import { AREAS, TRILHAS, areaById } from './lugares.js';
+import { carregarElenco, ELENCO_KEY } from './elenco.js';
 
 const STORAGE_KEY = 'mapa-avesso';
 const COMPARTILHADO = true;
 
-const AREAS = [
-  { id: 'espelho', icone: '🪞', nome: 'Espelho de Moldura de Linha', x: 50, y: 90,
-    desc: 'A passagem entre os dois lados. Poucos atravessam de volta pelo mesmo caminho que vieram.' },
-  { id: 'transicao', icone: '🧵', nome: 'Sala de Transição', x: 36, y: 76,
-    desc: 'Corredor de armários de costura onde toda visitante cai pela primeira vez no Avesso.' },
-  { id: 'mansao', icone: '🏛️', nome: 'Mansão de Porcelana', x: 52, y: 52,
-    desc: 'Residência do Duque Desfiado, cheia de retratos que fingem não estar vivos.' },
-  { id: 'ala', icone: '🖼️', nome: 'Ala Leste', x: 74, y: 42,
-    desc: 'Onde os retratos esquecidos vão se desfiando, memória por memória, até sumirem de vez.' },
-  { id: 'guarda', icone: '🔘', nome: 'Salão da Guarda de Botões', x: 28, y: 34,
-    desc: 'Sede burocrática de quem deveria proteger o Avesso — e raramente sabe como.' },
-  { id: 'jardim', icone: '🌹', nome: 'Jardim de Alfinetes', x: 16, y: 58,
-    desc: 'Um jardim onde as flores picam antes de florescer de verdade.' },
-  { id: 'biblioteca', icone: '📚', nome: 'Biblioteca de Linhas Perdidas', x: 80, y: 18,
-    desc: 'Onde ficam guardadas as Verdades que ninguém mais quis lembrar.' }
-];
-
-const TRILHAS = [
-  ['espelho','transicao'], ['transicao','mansao'],
-  ['mansao','ala'], ['mansao','guarda'], ['mansao','jardim'],
-  ['guarda','biblioteca']
-];
-
 let estado = {};
 let selecionado = null;
+let moradores = [];
 const save = createSaver('mp-save');
 
-const user = await initPage({ escopo: 'compartilhado', onSync: loadState });
+const user = await initPage({
+  escopo: 'compartilhado',
+  onSync: loadState,
+  escutar: [STORAGE_KEY, ELENCO_KEY]
+});
 if (user) {
   await loadState();
   ambientar();
 }
-
-function areaById(id) { return AREAS.find(a => a.id === id); }
 
 function defaultEstado() {
   const e = {};
@@ -55,7 +37,19 @@ async function loadState() {
     estado = defaultEstado();
   }
   AREAS.forEach(a => { if (!estado[a.id]) estado[a.id] = { descoberta: false, notas: '' }; });
+  await carregarMoradores();
   render();
+}
+
+// Cada região tem uma âncora: alguém que mora ali e a mesa pode procurar.
+// Quem o mestre ainda não apresentou não aparece pros jogadores.
+async function carregarMoradores() {
+  try {
+    const elenco = await carregarElenco();
+    moradores = elenco.moradores.filter(m => user.isMestre || m.revelado);
+  } catch (e) {
+    moradores = [];
+  }
 }
 
 function scheduleSave() {
@@ -141,6 +135,25 @@ function renderPins() {
   });
 }
 
+function renderMoradoresDaArea(areaId) {
+  const daqui = moradores.filter(m => m.local === areaId);
+  if (daqui.length === 0) return '';
+  return `
+    <div class="detail-moradores">
+      <p class="detail-moradores-label">quem vive aqui</p>
+      ${daqui.map(m => `
+        <a class="detail-morador" href="moradores.html">
+          <span class="detail-morador-icone">${m.icone}</span>
+          <span>
+            <strong>${escapeHtml(m.nome)}</strong>
+            <em>${escapeHtml(m.papel)}</em>
+          </span>
+        </a>
+      `).join('')}
+    </div>
+  `;
+}
+
 function renderDetail() {
   const wrap = document.getElementById('detail-area');
   if (!selecionado) {
@@ -172,6 +185,7 @@ function renderDetail() {
         ${!st.descoberta ? '<span class="detail-flag">na névoa pros jogadores</span>' : ''}
       </div>
       <p class="detail-desc">${escapeHtml(area.desc)}</p>
+      ${renderMoradoresDaArea(selecionado)}
       ${user.isMestre ? `
         <label class="detail-toggle">
           <input type="checkbox" id="det-descoberta" ${st.descoberta ? 'checked' : ''}>
@@ -186,6 +200,7 @@ function renderDetail() {
   `;
 
   const toggle = document.getElementById('det-descoberta');
+  // (o bloco de moradores é só leitura — quem edita é a tela de Moradores)
   if (toggle) {
     toggle.addEventListener('change', e => {
       estado[selecionado].descoberta = e.target.checked;

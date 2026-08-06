@@ -206,6 +206,24 @@ export const auth = {
   }
 };
 
+// ---- funções no servidor ---------------------------------------------------
+
+/**
+ * Chama uma Edge Function do projeto levando junto o login de quem está
+ * logado — é assim que a função sabe quem pediu, e pode recusar quem não é
+ * o mestre. Usada só pelos avisos (ver scripts/avisos.js): o resto do app
+ * fala direto com a tabela.
+ */
+export async function chamarFuncao(nome, corpo) {
+  if (!isSupabaseConfigured()) {
+    throw new Error('sem banco configurado');
+  }
+  const supabase = await getSupabaseClient();
+  const { data, error } = await supabase.functions.invoke(nome, { body: corpo });
+  if (error) throw error;
+  return data;
+}
+
 // ---- nome de exibição --------------------------------------------------
 // Separado do login: cada pessoa escolhe como quer aparecer pra mesa
 // (ficha, histórico de rolagens...) sem precisar trocar a conta em si.
@@ -229,6 +247,12 @@ export async function setNomeExibicao(nome) {
 }
 
 // ---- dados -----------------------------------------------------------------
+
+// Quando cada linha foi gravada por este aparelho. Serve pra não avisar a
+// pessoa de que "alguém mexeu" quando quem mexeu foi ela mesma: o Realtime
+// devolve o próprio evento junto com o dos outros.
+const ultimaEscrita = {};
+const JANELA_ECO_MS = 3000;
 
 export const db = {
   // Devolve o objeto guardado (já desserializado) ou null.
@@ -260,6 +284,7 @@ export const db = {
     }
 
     const supabase = await getSupabaseClient();
+    ultimaEscrita[buildId(key, shared, user)] = Date.now();
     const { error } = await supabase
       .from('avesso_kv')
       .upsert({
@@ -289,5 +314,54 @@ export const db = {
       .eq('id', buildId(key, shared, user));
     if (error) throw error;
     return true;
+  },
+
+  /**
+   * Avisa quando outra pessoa mexer nesta chave, ao vivo.
+   *
+   * É pra sessão acontecendo: até aqui, duas pessoas mexendo no Quadro de
+   * Linhas se atropelavam em silêncio até alguém apertar "recarregar". O
+   * aviso não sobrescreve nada sozinho — quem está com um cartão aberto não
+   * pode ter o texto puxado debaixo do dedo. Ele só acende a placa.
+   *
+   * Sem Supabase configurado (modo local), não há outra pessoa: devolve um
+   * cancelador que não faz nada.
+   *
+   * @param {string} key
+   * @param {boolean} shared
+   * @param {function} aoMudar
+   * @returns {function} chame para parar de escutar
+   */
+  escutar(key, shared, aoMudar) {
+    if (!isSupabaseConfigured()) return () => {};
+
+    let canal = null;
+    let vivo = true;
+
+    (async () => {
+      try {
+        const user = await auth.getUser();
+        if (!user || !vivo) return;
+        const supabase = await getSupabaseClient();
+        const id = buildId(key, shared, user);
+        canal = supabase
+          .channel('avesso:' + id)
+          .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'avesso_kv', filter: 'id=eq.' + id },
+            () => {
+              const meu = ultimaEscrita[id] || 0;
+              if (Date.now() - meu < JANELA_ECO_MS) return; // eco da própria gravação
+              aoMudar(key);
+            })
+          .subscribe();
+      } catch (e) {
+        // sem Realtime disponível o app continua igual, só sem o aviso
+      }
+    })();
+
+    return () => {
+      vivo = false;
+      if (canal) canal.unsubscribe();
+    };
   }
 };

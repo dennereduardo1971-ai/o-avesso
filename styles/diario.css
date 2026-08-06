@@ -41,6 +41,21 @@
   padding: 18px 20px 16px;
   position: relative;
 }
+/* página escrita pelo pulso do mundo, não por quem jogou */
+.dv-entry.pulso { border-left: 3px solid var(--thread-blue); background: linear-gradient(180deg, rgba(63,95,127,0.10), transparent 60%), var(--panel); }
+.dv-badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(63,95,127,0.55);
+  background: rgba(63,95,127,0.18);
+  color: #b9d0e4;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .dv-entry-top { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-end; }
 .dv-field { display: flex; flex-direction: column; gap: 3px; }
 .dv-field label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--parchment-dim); }

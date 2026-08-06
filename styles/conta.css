@@ -118,6 +118,39 @@
 .ct-msg.ok { color: #9fd8a0; }
 .ct-msg.erro { color: #d79a94; }
 
+/* ---- avisos do Avesso (push) ---- */
+
+.ct-avisos-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.ct-avisos-estado {
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--seam);
+  color: var(--parchment-dim);
+}
+.ct-avisos-estado.ligado {
+  border-color: rgba(63,95,127,0.6);
+  background: rgba(63,95,127,0.18);
+  color: #b9d0e4;
+}
+.ct-avisos-estado.bloqueado {
+  border-color: rgba(165,69,63,0.55);
+  color: #e8b0aa;
+}
+.ct-btn.pequeno {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
 .ct-info-text {
   font-size: 13.5px;
   line-height: 1.6;

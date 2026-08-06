@@ -4,13 +4,17 @@
 
 import { initPage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
 import { auth, setNomeExibicao } from './db.js';
+import { estado as estadoDosAvisos, ligar as ligarAvisos, desligar as desligarAvisos } from './avisos.js';
 
 let nomeExibicao = '';
+let avisos = 'sem-suporte';
+let avisosMsg = null;
 const saveNome = createSaver('ct-nome-save');
 
 const user = await initPage({ escopo: 'pessoal' });
 if (user) {
   nomeExibicao = user.nomeExibicao || user.username;
+  avisos = await estadoDosAvisos();
   render();
   ambientar();
 }
@@ -37,6 +41,8 @@ function render() {
             <span class="ct-save-indicator" id="ct-nome-save">salvo ✓</span>
           </p>
         </section>
+
+        ${renderAvisos()}
 
         <section class="ct-section">
           <p class="ct-section-label">🔒 Trocar Senha</p>
@@ -68,6 +74,76 @@ function render() {
   attachHandlers();
 }
 
+/**
+ * Avisos do Avesso. Vale só pra este aparelho — ligar no celular não liga no
+ * computador, e é assim mesmo: a inscrição é do navegador, não da conta.
+ */
+function renderAvisos() {
+  const textos = {
+    'sem-suporte': {
+      estado: 'este aparelho não recebe avisos',
+      hint: 'no iPhone, os avisos só funcionam com o app instalado na tela de início — pelo Safari em aba, o sistema não deixa'
+    },
+    'sem-chave': {
+      estado: 'os avisos ainda não foram ligados nesta mesa',
+      hint: 'falta o mestre publicar a função de avisos (ver gerar-chaves-push.js)'
+    },
+    'bloqueado': {
+      estado: 'este aparelho recusou as notificações',
+      hint: 'pra voltar atrás, libere as notificações deste site nas configurações do navegador'
+    },
+    'ligado': {
+      estado: 'ligado neste aparelho',
+      hint: 'você recebe um aviso quando o mestre publicar o que aconteceu entre as sessões — e nada além disso'
+    },
+    'desligado': {
+      estado: 'desligado neste aparelho',
+      hint: 'ligue pra saber quando o mestre publicar o entre-sessões, sem precisar abrir o app pra conferir'
+    }
+  };
+  const t = textos[avisos] || textos['sem-suporte'];
+  const podeMexer = avisos === 'ligado' || avisos === 'desligado';
+
+  return `
+    <section class="ct-section">
+      <p class="ct-section-label">🔔 Avisos do Avesso</p>
+      <p class="ct-section-hint">${escapeHtml(t.hint)}</p>
+      <div class="ct-avisos-linha">
+        <span class="ct-avisos-estado ${avisos}">${escapeHtml(t.estado)}</span>
+        ${podeMexer ? `
+          <button type="button" class="ct-btn pequeno" id="ct-avisos-btn">
+            ${avisos === 'ligado' ? 'desligar aqui' : 'ligar neste aparelho'}
+          </button>
+        ` : ''}
+      </div>
+      ${avisosMsg ? `<p class="ct-msg ${avisosMsg.tom}">${escapeHtml(avisosMsg.texto)}</p>` : ''}
+      <p class="scope-note" style="margin-top:10px;">o Avesso só chama quando o mestre chama — nada aqui dispara sozinho</p>
+    </section>
+  `;
+}
+
+async function alternarAvisos() {
+  const btn = document.getElementById('ct-avisos-btn');
+  btn.disabled = true;
+  btn.textContent = 'costurando...';
+  avisosMsg = null;
+
+  try {
+    if (avisos === 'ligado') {
+      await desligarAvisos();
+      avisosMsg = { tom: 'ok', texto: 'este aparelho não será mais avisado' };
+    } else {
+      await ligarAvisos();
+      avisosMsg = { tom: 'ok', texto: 'pronto — o Avesso sabe onde te achar' };
+    }
+  } catch (e) {
+    avisosMsg = { tom: 'erro', texto: e.message || 'não deu pra mexer nos avisos agora' };
+  }
+
+  avisos = await estadoDosAvisos();
+  render();
+}
+
 function attachHandlers() {
   document.getElementById('ct-nome').addEventListener('input', e => {
     nomeExibicao = e.target.value;
@@ -75,6 +151,9 @@ function attachHandlers() {
   });
 
   document.getElementById('ct-trocar-senha').addEventListener('click', trocarSenha);
+
+  const avisosBtn = document.getElementById('ct-avisos-btn');
+  if (avisosBtn) avisosBtn.addEventListener('click', alternarAvisos);
 }
 
 async function trocarSenha() {

@@ -34,7 +34,11 @@ let dragging = null; // {id, offsetX, offsetY}
 
 const save = createSaver('save-indicator');
 
-const user = await initPage({ escopo: 'compartilhado', onSync: loadState });
+const user = await initPage({
+  escopo: 'compartilhado',
+  onSync: loadState,
+  escutar: [STORAGE_KEY]
+});
 if (user) {
   await loadState();
   ambientar();

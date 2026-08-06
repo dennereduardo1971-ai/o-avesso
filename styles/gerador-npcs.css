@@ -68,11 +68,37 @@
 }
 .gn-mini-btn:hover { background: rgba(43,33,48,0.12); }
 .gn-mini-btn.save { border-color: var(--thread-blue); color: var(--thread-blue); }
+.gn-mini-btn.promover { border-color: rgba(165,69,63,0.6); color: var(--ink-red); }
+
+/* o mesmo botão, mas dentro da lista guardada — ali o fundo é escuro */
+.gn-saved-item .gn-mini-btn {
+  flex: none;
+  margin-top: 8px;
+  background: none;
+  border-color: rgba(165,69,63,0.55);
+  color: #e8b0aa;
+}
+.gn-saved-item .gn-mini-btn:hover { background: rgba(165,69,63,0.15); }
 
 .gn-section-label {
   font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 13px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin: 0 0 10px;
 }
+.gn-section-hint {
+  font-size: 12px; font-style: italic; color: var(--parchment-dim); margin: -6px 0 10px;
+}
+
+/* resposta da promoção — some assim que outro personagem é gerado */
+.gn-aviso {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  border-left: 3px solid var(--gold);
+  background: rgba(182,138,78,0.12);
+}
+.gn-aviso.erro { border-left-color: var(--ink-red); background: rgba(165,69,63,0.14); }
 
 .gn-saved-list { display: flex; flex-direction: column; gap: 8px; }
 .gn-saved-item {

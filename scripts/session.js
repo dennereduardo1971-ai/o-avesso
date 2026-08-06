@@ -5,6 +5,7 @@
 import { auth, db, MESTRE, getNomeExibicao } from './db.js';
 import { escapeHtml } from './util.js';
 import { iniciarAtmosfera, costurar } from './atmosfera.js';
+import { registrarPresenca } from './visitantes.js';
 
 export { db as storage, MESTRE };
 export { escapeHtml, escapeAttr } from './util.js';
@@ -23,6 +24,7 @@ const TELAS = [
   { arquivo: 'ficha.html', icone: '🪡', nome: 'Ficha da Visitante', tipo: 'neutro' },
   { arquivo: 'dado.html', icone: '🎲', nome: 'Dado Rolável', tipo: 'pista' },
   { arquivo: 'quadro-de-linhas.html', icone: '🧵', nome: 'Quadro de Linhas', tipo: 'pista' },
+  { arquivo: 'moradores.html', icone: '🎭', nome: 'Moradores do Avesso', tipo: 'suspeito' },
   { arquivo: 'mapa.html', icone: '🗺️', nome: 'Mapa do Avesso', tipo: 'neutro' },
   { arquivo: 'diario.html', icone: '📰', nome: 'Diário do Avesso', tipo: 'neutro' },
   { arquivo: 'caderno-mestre.html', icone: '📓', nome: 'Caderno do Mestre', tipo: 'suspeito', somenteMestre: true },
@@ -125,10 +127,23 @@ function mountTopbar(user, escopo, onSync) {
         await onSync();
       } finally {
         syncBtn.disabled = false;
+        syncBtn.classList.remove('alerta');
         syncBtn.textContent = 'recarregar';
       }
     });
   }
+}
+
+/**
+ * Acende a placa de "alguém mexeu nisto agora". De propósito não recarrega
+ * sozinho: quem está com um cartão aberto não pode ter o texto puxado
+ * debaixo do dedo no meio de uma frase. A pessoa recarrega quando quiser.
+ */
+function avisarMudancaExterna() {
+  const syncBtn = document.getElementById('topbar-sync');
+  if (!syncBtn || syncBtn.disabled) return;
+  syncBtn.classList.add('alerta');
+  syncBtn.textContent = 'puxaram um fio — recarregar';
 }
 
 function renderPortaTrancada() {
@@ -155,8 +170,9 @@ function renderPortaTrancada() {
  * @param {'pessoal'|'compartilhado'|'mestre'} opts.escopo  o que a etiqueta do topo mostra
  * @param {boolean} opts.somenteMestre                      trava a página pros jogadores
  * @param {function} [opts.onSync]                          liga o botão "recarregar" (páginas compartilhadas)
+ * @param {string[]} [opts.escutar]                         chaves compartilhadas a vigiar ao vivo
  */
-export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSync = null } = {}) {
+export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSync = null, escutar = [] } = {}) {
   let user = null;
   try {
     user = await auth.getUser();
@@ -181,6 +197,18 @@ export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSy
   }
 
   mountTopbar(user, escopo, onSync);
+
+  // "eu estive aqui" — é o que permite ao mestre montar a grade de relações
+  // sem digitar o nome de ninguém. Não espera pela resposta: se o espelho
+  // estiver sem sinal, a página abre igual.
+  registrarPresenca(user);
+
+  // sincronia ao vivo: enquanto a mesa joga, mexer numa tela compartilhada
+  // acende a placa de "recarregar" nas outras pessoas
+  if (onSync && escutar.length > 0) {
+    escutar.forEach((chave) => db.escutar(chave, true, avisarMudancaExterna));
+  }
+
   return user;
 }
 
@@ -198,7 +226,7 @@ export function seamHtml() {
 // não casa com nada, e a teia ignora.
 const FOCO_PADRAO = [
   '.patch', '.portal-card', '.attr-card', '.kit-item', '.dv-entry',
-  '.cm-card', '.npc-card', '.mp-area', '.dd-attr', '.ct-card'
+  '.cm-card', '.npc-card', '.mp-area', '.dd-attr', '.ct-card', '.mr-card'
 ].join(', ');
 
 /**
