@@ -2,10 +2,11 @@
 // Confere quem atravessou o espelho, monta a barra de topo e decide
 // se a porta abre (o Caderno do Mestre só abre pra uma pessoa).
 
-import { auth, db, MESTRE, getNomeExibicao } from './db.js';
+import { auth, db, MESTRE, getNomeExibicao, CONVIDADA } from './db.js';
 import { escapeHtml } from './util.js';
 import { iniciarAtmosfera, costurar } from './atmosfera.js';
 import { registrarPresenca } from './visitantes.js';
+import { vigiarAtualizacao } from './atualizacao.js';
 
 export { db as storage, MESTRE };
 export { escapeHtml, escapeAttr } from './util.js';
@@ -18,10 +19,15 @@ const ESCOPOS = {
 
 // Todas as telas do app, na mesma ordem do Hub. É daqui que sai o menu
 // de navegação — antes só dava pra ir de uma tela a outra passando pelo Hub.
+//
+// `semLogin: true` marca o que a convidada consegue abrir de verdade: página
+// estática ou que só guarda coisa pessoal. O resto some do menu dela — mostrar
+// um Diário que vai dar erro ao abrir é pior do que não mostrar.
 const TELAS = [
   { arquivo: 'index.html', icone: '🚪', nome: 'Hub', tipo: 'neutro' },
-  { arquivo: 'manual.html', icone: '📖', nome: 'Manual do Jogador', tipo: 'pista' },
-  { arquivo: 'ficha.html', icone: '🪡', nome: 'Ficha da Visitante', tipo: 'neutro' },
+  { arquivo: 'jogo.html', icone: '🪞', nome: 'Atravessar', tipo: 'pista', semLogin: true },
+  { arquivo: 'manual.html', icone: '📖', nome: 'Manual do Jogador', tipo: 'pista', semLogin: true },
+  { arquivo: 'ficha.html', icone: '🪡', nome: 'Ficha da Visitante', tipo: 'neutro', semLogin: true },
   { arquivo: 'dado.html', icone: '🎲', nome: 'Dado Rolável', tipo: 'pista' },
   { arquivo: 'quadro-de-linhas.html', icone: '🧵', nome: 'Quadro de Linhas', tipo: 'pista' },
   { arquivo: 'moradores.html', icone: '🎭', nome: 'Moradores do Avesso', tipo: 'suspeito' },
@@ -47,6 +53,7 @@ function navHtml(user) {
   const atual = paginaAtual();
   const itens = TELAS
     .filter((tela) => !tela.somenteMestre || user.isMestre)
+    .filter((tela) => !user.convidada || tela.semLogin)
     .map((tela) => {
       const aqui = semExtensao(tela.arquivo) === atual;
       return `
@@ -100,23 +107,32 @@ function mountTopbar(user, escopo, onSync) {
   const info = ESCOPOS[escopo] || ESCOPOS.pessoal;
   const bar = document.createElement('div');
   bar.className = 'topbar';
+  // A convidada não tem de onde sair nem nome pra mostrar: no lugar do chip e
+  // do "sair", ela recebe o convite de guardar o progresso numa conta.
+  const canto = user.convidada
+    ? '<a class="topbar-btn topbar-entrar" href="index.html">entrar</a>'
+    : `<span class="user-chip">${escapeHtml(user.nomeExibicao || user.username)}${user.isMestre ? ' <em>mestre</em>' : ''}</span>
+       <button type="button" class="topbar-btn" id="topbar-sair">sair</button>`;
+
   bar.innerHTML = `
-    <a class="topbar-back" href="index.html">← Hub</a>
+    <a class="topbar-back" href="${user.convidada ? 'jogo.html' : 'index.html'}">← ${user.convidada ? 'o Avesso' : 'Hub'}</a>
     ${navHtml(user)}
     <span class="scope-tag ${escopo}" title="${escapeHtml(info.dica)}">${info.icone} ${info.rotulo}</span>
     <span class="topbar-spacer"></span>
     ${onSync ? '<button type="button" class="topbar-btn" id="topbar-sync">recarregar</button>' : ''}
-    <span class="user-chip">${escapeHtml(user.nomeExibicao || user.username)}${user.isMestre ? ' <em>mestre</em>' : ''}</span>
-    <button type="button" class="topbar-btn" id="topbar-sair">sair</button>
+    ${canto}
   `;
   document.body.insertBefore(bar, document.body.firstChild);
 
   ligarNav();
 
-  document.getElementById('topbar-sair').addEventListener('click', async () => {
-    await auth.signOut();
-    window.location.replace('index.html');
-  });
+  const sairBtn = document.getElementById('topbar-sair');
+  if (sairBtn) {
+    sairBtn.addEventListener('click', async () => {
+      await auth.signOut();
+      window.location.replace('index.html');
+    });
+  }
 
   const syncBtn = document.getElementById('topbar-sync');
   if (syncBtn) {
@@ -171,8 +187,9 @@ function renderPortaTrancada() {
  * @param {boolean} opts.somenteMestre                      trava a página pros jogadores
  * @param {function} [opts.onSync]                          liga o botão "recarregar" (páginas compartilhadas)
  * @param {string[]} [opts.escutar]                         chaves compartilhadas a vigiar ao vivo
+ * @param {boolean} [opts.permiteConvidada]                 abre sem login, guardando tudo neste aparelho
  */
-export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSync = null, escutar = [] } = {}) {
+export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSync = null, escutar = [], permiteConvidada = false } = {}) {
   let user = null;
   try {
     user = await auth.getUser();
@@ -180,9 +197,16 @@ export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSy
     user = null;
   }
 
-  if (!user) {
+  // Sem sessão, só o que foi marcado como jogável sem conta continua. O resto
+  // volta pro login, como sempre — a tranca de verdade é o RLS, mas mandar a
+  // pessoa pra uma tela que só sabe dar erro não ajuda ninguém.
+  if (!user && !permiteConvidada) {
     window.location.replace('index.html');
     return null;
+  }
+
+  if (!user) {
+    user = Object.assign({}, CONVIDADA);
   }
 
   if (somenteMestre && !user.isMestre) {
@@ -191,17 +215,21 @@ export async function initPage({ escopo = 'pessoal', somenteMestre = false, onSy
   }
 
   try {
-    user.nomeExibicao = await getNomeExibicao(user);
+    user.nomeExibicao = user.convidada ? 'convidada' : await getNomeExibicao(user);
   } catch (e) {
     user.nomeExibicao = user.username;
   }
 
   mountTopbar(user, escopo, onSync);
 
+  // uma publicação nova acende a placa de "recarregar" — nunca troca sozinha
+  vigiarAtualizacao();
+
   // "eu estive aqui" — é o que permite ao mestre montar a grade de relações
   // sem digitar o nome de ninguém. Não espera pela resposta: se o espelho
-  // estiver sem sinal, a página abre igual.
-  registrarPresenca(user);
+  // estiver sem sinal, a página abre igual. Convidada não entra nessa lista:
+  // ela ainda não é ninguém da mesa.
+  if (!user.convidada) registrarPresenca(user);
 
   // sincronia ao vivo: enquanto a mesa joga, mexer numa tela compartilhada
   // acende a placa de "recarregar" nas outras pessoas

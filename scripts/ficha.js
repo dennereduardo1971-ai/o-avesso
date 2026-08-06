@@ -25,7 +25,9 @@ const defaultState = {
 let state = JSON.parse(JSON.stringify(defaultState));
 const save = createSaver('save-indicator');
 
-const user = await initPage({ escopo: 'pessoal' });
+// A ficha só guarda coisa pessoal, então a convidada também tem a dela —
+// e é ela que o prólogo do jogo preenche.
+const user = await initPage({ escopo: 'pessoal', permiteConvidada: true });
 if (user) {
   await loadState();
   ambientar();

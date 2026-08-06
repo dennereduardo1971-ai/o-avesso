@@ -51,6 +51,59 @@ function makeUser(id, username) {
   return { id: id, username: nome, isMestre: nome === MESTRE };
 }
 
+// ---- a convidada -----------------------------------------------------------
+// Quem abre o app pra jogar e ainda não tem conta. Ela existe só neste
+// aparelho: o que é dela fica no localStorage e nunca sobe pro banco.
+//
+// A regra é estreita de propósito. Convidada lê e escreve o que é **pessoal**
+// (a partida, a ficha). Tudo que é compartilhado — Diário, Quadro, Mapa,
+// elenco — continua exigindo login, porque escrever ali é escrever na mesa dos
+// outros, e o RLS recusaria de qualquer jeito. Sem isso, jogar exigia que o
+// mestre criasse uma conta antes de a pessoa poder começar.
+
+export const CONVIDADA = { id: 'convidada', username: 'convidada', isMestre: false, convidada: true };
+
+/** Quem está usando o app agora: a pessoa logada, ou a convidada local. */
+export async function usuarioAtual() {
+  let user = null;
+  try {
+    user = await auth.getUser();
+  } catch (e) {
+    user = null;
+  }
+  return user || CONVIDADA;
+}
+
+// O que a convidada leva junto quando finalmente cria conta e entra. Só
+// pessoal, e só o que representa progresso — nada de preferência de aparelho.
+const CHAVES_DA_CONVIDADA = ['o-avesso-partida', 'o-avesso-ficha-personagem'];
+
+/**
+ * Sobe o que a convidada jogou neste aparelho para a conta que acabou de
+ * entrar. Só preenche o que estiver vazio do outro lado: se ela já tinha
+ * partida na conta, a do aparelho não passa por cima — perder progresso ao
+ * fazer login seria pior do que não migrar nada.
+ *
+ * @returns {Promise<string[]>} as chaves que subiram
+ */
+export async function migrarDaConvidada() {
+  const subiram = [];
+  for (const chave of CHAVES_DA_CONVIDADA) {
+    const local = getLocalData(chave, false, CONVIDADA);
+    if (!local) continue;
+    try {
+      const remoto = await db.get(chave, false);
+      if (remoto) continue;
+      await db.set(chave, local, false);
+      localStorage.removeItem(getLocalStorageKey(chave, false, CONVIDADA));
+      subiram.push(chave);
+    } catch (e) {
+      // sem espelho não tem migração; o que é dela continua aqui, intacto
+    }
+  }
+  return subiram;
+}
+
 // ---- sessão local (modo sem Supabase) --------------------------------------
 
 function getLocalSession() {
@@ -128,6 +181,9 @@ export const auth = {
     });
     if (error) throw error;
     cachedUser = makeUser(data.user.id, emailToUsername(data.user.email));
+    // jogou como convidada e agora tem conta: o progresso sobe junto, senão
+    // criar login pareceria começar do zero
+    try { await migrarDaConvidada(); } catch (e) {}
     return data;
   },
 
@@ -258,7 +314,11 @@ export const db = {
   // Devolve o objeto guardado (já desserializado) ou null.
   async get(key, shared = false) {
     const user = await auth.getUser();
-    if (!user) throw new Error('sem sessão');
+    if (!user) {
+      // convidada: o que é dela mora neste aparelho; o que é da mesa, não é dela
+      if (shared) throw new Error('esta tela precisa de login');
+      return getLocalData(key, false, CONVIDADA);
+    }
 
     if (!isSupabaseConfigured()) {
       return getLocalData(key, shared, user);
@@ -276,7 +336,11 @@ export const db = {
 
   async set(key, value, shared = false) {
     const user = await auth.getUser();
-    if (!user) throw new Error('sem sessão');
+    if (!user) {
+      if (shared) throw new Error('esta tela precisa de login');
+      setLocalData(key, value, false, CONVIDADA);
+      return true;
+    }
 
     if (!isSupabaseConfigured()) {
       setLocalData(key, value, shared, user);
@@ -300,7 +364,11 @@ export const db = {
 
   async remove(key, shared = false) {
     const user = await auth.getUser();
-    if (!user) throw new Error('sem sessão');
+    if (!user) {
+      if (shared) throw new Error('esta tela precisa de login');
+      localStorage.removeItem(getLocalStorageKey(key, false, CONVIDADA));
+      return true;
+    }
 
     if (!isSupabaseConfigured()) {
       localStorage.removeItem(getLocalStorageKey(key, shared, user));

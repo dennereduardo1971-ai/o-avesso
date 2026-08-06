@@ -1,4 +1,9 @@
-const CACHE_NAME = 'o-avesso-v15';
+// A versão é carimbada na publicação: o workflow em .github/workflows/publicar.yml
+// troca 'dev' pelo hash do commit antes de subir. Assim cada publicação vira um
+// cache novo sozinha, e ninguém precisa lembrar de subir número na mão — que era
+// o jeito de deixar a mesa inteira presa numa versão antiga sem perceber.
+const VERSAO = 'dev';
+const CACHE_NAME = 'o-avesso-' + VERSAO;
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,6 +20,7 @@ const APP_SHELL = [
   './pages/mapa.html',
   './pages/moradores.html',
   './pages/conta.html',
+  './pages/jogo.html',
   './pages/icons/icon-192.png',
   './pages/icons/icon-512.png',
   './scripts/db.js',
@@ -39,7 +45,15 @@ const APP_SHELL = [
   './scripts/gerador-npcs.js',
   './scripts/diario.js',
   './scripts/conta.js',
+  './scripts/atualizacao.js',
+  './scripts/jogo.js',
+  './scripts/jogo/motor.js',
+  './scripts/jogo/caso-duque.js',
+  './scripts/jogo/dialogos-duque.js',
+  './scripts/jogo/retratos.js',
+  './scripts/jogo/cenario.js',
   './styles/shared.css',
+  './styles/jogo.css',
   './styles/hub.css',
   './styles/manual.css',
   './styles/ficha.css',
@@ -57,7 +71,15 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
-  self.skipWaiting();
+  // De propósito sem `skipWaiting()` aqui: a versão nova se instala calada e
+  // fica esperando. Quem manda ela assumir é a pessoa, tocando a placa de
+  // "recarregar" (ver scripts/atualizacao.js). Assumir sozinha trocaria o app
+  // no meio de uma cena.
+});
+
+// a placa foi tocada: pode assumir
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.tipo === 'assumir') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -123,9 +145,17 @@ self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('supabase.co')) return;
   if (event.request.method !== 'GET') return;
 
+  // Navegação vai na rede primeiro (pra pegar página nova assim que existir) e
+  // cai pro cache quando não há sinal. A queda é pra **própria página pedida**,
+  // não pro Hub: quem instalou o app abre no jogo, e mandar a pessoa pro login
+  // por estar sem internet seria trocar a porta de lugar justamente na hora em
+  // que ela menos pode resolver isso.
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('./pages/index.html'))
+      fetch(event.request).catch(() =>
+        caches.match(event.request, { ignoreSearch: true })
+          .then((guardada) => guardada || caches.match('./pages/jogo.html'))
+      )
     );
     return;
   }

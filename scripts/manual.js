@@ -3,7 +3,8 @@
 
 import { initPage, ambientar, seamHtml } from './session.js';
 
-await initPage({ escopo: 'compartilhado' });
+// Página estática, sem storage: não há o que uma conta acrescentaria aqui.
+await initPage({ escopo: 'compartilhado', permiteConvidada: true });
 
 document.getElementById('manual-root').innerHTML = `
   <div class="mn-wrap">

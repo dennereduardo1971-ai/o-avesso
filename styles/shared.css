@@ -112,6 +112,13 @@ a { color: inherit; }
   50% { box-shadow: 0 0 0 4px rgba(63, 95, 127, 0); }
 }
 
+/* a convidada não tem chip de nome: tem um convite */
+a.topbar-entrar {
+  text-decoration: none;
+  border-color: var(--accent);
+  color: var(--page-text);
+}
+
 .user-chip {
   font-family: 'Cormorant Garamond', serif;
   font-size: 13px;
@@ -354,6 +361,61 @@ a.patch:hover, button.patch:hover {
 .locked-text { font-size: 14px; line-height: 1.55; color: var(--page-muted); margin: 0 0 18px; }
 .locked-link { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); text-decoration: none; }
 .locked-link:hover { text-decoration: underline; }
+
+/* ---- placa de versão nova (scripts/atualizacao.js) ----------------------
+   Fica no rodapé, discreta, e não bloqueia nada: a pessoa recarrega quando
+   terminar o que está fazendo. */
+
+.atz-placa {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 16px;
+  background: var(--panel);
+  border: 1px solid rgba(63, 95, 127, 0.65);
+  border-radius: 999px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.6);
+  transform: translateX(-50%) translateY(calc(100% + 24px));
+  transition: transform 0.42s cubic-bezier(.16, 1.05, .3, 1);
+}
+.atz-placa.mostrando { transform: translateX(-50%); }
+.atz-texto {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14.5px;
+  color: var(--page-text);
+}
+.atz-btn {
+  font-family: 'EB Garamond', serif;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--page-text);
+  background: var(--thread-blue);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.atz-btn:hover { background: #4d729a; }
+.atz-btn:disabled { opacity: 0.6; cursor: default; }
+.atz-fechar {
+  background: none;
+  border: none;
+  color: var(--page-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.atz-fechar:hover { color: var(--page-text); }
+
+@media (max-width: 420px) {
+  .atz-placa { left: 10px; right: 10px; transform: translateY(calc(100% + 24px)); }
+  .atz-placa.mostrando { transform: none; }
+  .atz-texto { font-size: 13px; }
+}
 
 /* ---- avisos de escopo dentro das páginas ---- */
 

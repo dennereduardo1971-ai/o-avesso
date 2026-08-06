@@ -1,0 +1,77 @@
+# Publica o Avesso no GitHub Pages a cada push na main.
+#
+# Não há build: o app é HTML/JS/CSS estático. O que este workflow faz de
+# verdade é duas coisas —
+#
+#   1. carimba a versão no service-worker.js com o hash do commit, pra que
+#      cada publicação vire um cache novo sozinha (o jeito antigo era lembrar
+#      de subir um número na mão, e esquecer disso deixava a mesa presa numa
+#      versão antiga sem ninguém perceber);
+#   2. deixa de fora o que não é do site: a versão antiga guardada como
+#      histórico, o script que usa a service_role key, e os PDFs do manual.
+
+name: publicar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez. Se você empurrar dois commits seguidos, o segundo
+# espera o primeiro em vez de os dois brigarem pelo mesmo deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Carimbar a versão no service worker
+        run: |
+          versao="${GITHUB_SHA::7}"
+          sed -i "s/^const VERSAO = 'dev';/const VERSAO = '${versao}';/" service-worker.js
+          grep -q "const VERSAO = '${versao}';" service-worker.js \
+            || { echo "::error::não consegui carimbar a versão — o marcador em service-worker.js mudou?"; exit 1; }
+          echo "publicando como $versao"
+
+      - name: Separar o que vai pro ar
+        run: |
+          mkdir -p _site
+          rsync -a ./ _site/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.claude' \
+            --exclude '_site' \
+            --exclude 'node_modules' \
+            --exclude 'o avesso app' \
+            --exclude 'create-users.js' \
+            --exclude 'gerar-chaves-push.js' \
+            --exclude 'token github.txt' \
+            --exclude '*.pdf' \
+            --exclude 'supabase' \
+            --exclude 'supabase-schema.sql'
+          # sem isto o GitHub Pages passa o site pelo Jekyll e some com
+          # qualquer arquivo começado por underscore
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

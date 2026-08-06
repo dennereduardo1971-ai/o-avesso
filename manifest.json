@@ -1,15 +1,21 @@
 {
   "name": "O Avesso",
   "short_name": "O Avesso",
-  "description": "Hub das ferramentas da campanha O Avesso",
-  "start_url": "./pages/index.html",
+  "description": "Atravesse o espelho e resolva os mistérios do Avesso",
+  "start_url": "./pages/jogo.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#14101a",
   "theme_color": "#b68a4e",
+  "lang": "pt-BR",
+  "categories": ["games", "entertainment"],
   "icons": [
     { "src": "./pages/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "./pages/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Manual do Jogador", "url": "./pages/manual.html", "icons": [{ "src": "./pages/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "As telas da mesa", "url": "./pages/index.html", "icons": [{ "src": "./pages/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
