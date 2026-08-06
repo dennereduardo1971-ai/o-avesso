@@ -1,14 +1,26 @@
 # Publica o Avesso no GitHub Pages a cada push na main.
 #
 # Não há build: o app é HTML/JS/CSS estático. O que este workflow faz de
-# verdade é duas coisas —
+# verdade é três coisas —
 #
 #   1. carimba a versão no service-worker.js com o hash do commit, pra que
 #      cada publicação vire um cache novo sozinha (o jeito antigo era lembrar
 #      de subir um número na mão, e esquecer disso deixava a mesa presa numa
 #      versão antiga sem ninguém perceber);
 #   2. deixa de fora o que não é do site: a versão antiga guardada como
-#      histórico, o script que usa a service_role key, e os PDFs do manual.
+#      histórico, o script que usa a service_role key, e os PDFs do manual;
+#   3. empurra o resultado pro branch `gh-pages`, que é de onde o site é servido.
+#
+# POR QUE BRANCH, E NÃO `actions/deploy-pages`
+# A via oficial via Actions (configure-pages + deploy-pages) ficou presa em
+# `deployment_queued` até estourar o tempo, três vezes seguidas, enquanto a API
+# `/repos/.../pages` insistia em devolver 404 — o site nunca chegou a ser
+# provisionado (o repositório nasceu privado, e Pages privado exige plano pago).
+# Publicar por branch usa outra máquina, bem mais antiga e estável, e não
+# depende daquela API. O preço é um branch a mais no repositório.
+#
+# Do lado do GitHub, isso exige Settings → Pages → Source: "Deploy from a
+# branch" → `gh-pages` → `/ (root)`.
 
 name: publicar
 
@@ -18,22 +30,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Uma publicação por vez. Se você empurrar dois commits seguidos, o segundo
-# espera o primeiro em vez de os dois brigarem pelo mesmo deploy.
+# Uma publicação por vez, e a mais nova ganha: se você empurrar dois commits
+# seguidos, não faz sentido esperar o primeiro terminar pra publicar o segundo.
+# (Com `cancel-in-progress: false`, um run travado bloqueava todos os
+# seguintes — foi exatamente o que aconteceu aqui.)
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: publicar
+  cancel-in-progress: true
 
 jobs:
   publicar:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -65,13 +74,17 @@ jobs:
           # qualquer arquivo começado por underscore
           touch _site/.nojekyll
 
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - id: deploy
-        uses: actions/deploy-pages@v4
+      - name: Empurrar pro branch gh-pages
+        run: |
+          cd _site
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publicar ${GITHUB_SHA::7}"
+          # `--force` porque gh-pages é descartável: ele não guarda histórico,
+          # é só o retrato do site agora. O histórico de verdade mora na main.
+          git push --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:gh-pages
+          echo "no ar em https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/pages/jogo.html"
