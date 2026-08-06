@@ -3,7 +3,7 @@
 // tabelas rápidas de improviso (só o mestre) e um bloco de anotações rápidas
 // pessoais. Os dados são exibidos em cubo/gema 3D via CSS.
 
-import { initPage, storage, createSaver, escapeHtml, ambientar } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, ambientar, seamHtml } from './session.js';
 
 const FICHA_KEY = 'o-avesso-ficha-personagem';
 const HISTORICO_KEY = 'o-avesso-historico-rolagens';
@@ -219,7 +219,7 @@ function render() {
           <p class="dd-subtitle">O risco entra só quando você decide agir.</p>
         </div>
 
-        <div class="dd-seam"></div>
+        ${seamHtml()}
 
         <section class="dd-section">
           <p class="dd-section-label">🎲 Teste de Atributo (1d6 + atributo)</p>

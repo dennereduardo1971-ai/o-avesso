@@ -1,6 +1,6 @@
 // ficha.js — Ficha da Visitante. Pessoal: cada login tem a sua, e ninguém mais lê.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-ficha-personagem';
 const COMPARTILHADO = false;
@@ -68,7 +68,7 @@ function render() {
             <p class="subtitle">A ficha de ${escapeHtml(user.nomeExibicao || user.username)} — cada fio conta uma sessão.</p>
           </div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <div class="row-2">
             <div class="field">
@@ -114,7 +114,7 @@ function render() {
             <p class="logica-hint">clique nos carretéis para marcar o que já se perdeu</p>
           </div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <p class="section-label">Kit de Detetive</p>
           <div class="kit-list">
@@ -135,7 +135,7 @@ function render() {
             `).join('')}
           </div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <p class="section-label">Anotações Pessoais</p>
           <div class="field notas">

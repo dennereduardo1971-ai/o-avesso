@@ -6,7 +6,6 @@
 #gerador-root * { box-sizing: border-box; }
 
 .gn-wrap {
-  background: var(--bg-deep);
   background-image:
     radial-gradient(ellipse at 20% 0%, rgba(63,95,127,0.10), transparent 55%),
     radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
@@ -69,15 +68,6 @@
 }
 .gn-mini-btn:hover { background: rgba(43,33,48,0.12); }
 .gn-mini-btn.save { border-color: var(--thread-blue); color: var(--thread-blue); }
-
-.gn-seam {
-  height: 14px; margin: 28px 0 16px; position: relative;
-}
-.gn-seam::after {
-  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
-  position: absolute; left: 0; right: 0; top: -6px; text-align: center;
-  letter-spacing: 6px; font-size: 9px; color: var(--seam); white-space: nowrap; overflow: hidden;
-}
 
 .gn-section-label {
   font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 13px;

@@ -6,7 +6,6 @@
 .splash-screen {
   position: fixed; inset: 0; z-index: 999;
   display: flex; align-items: center; justify-content: center;
-  background: var(--bg-deep);
   background-image:
     radial-gradient(ellipse at 50% 30%, rgba(63,95,127,0.16), transparent 60%),
     radial-gradient(ellipse at 50% 90%, rgba(182,138,78,0.10), transparent 55%);

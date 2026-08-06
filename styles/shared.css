@@ -43,11 +43,15 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: var(--page-bg);
   color: var(--page-text);
 }
+/* A cor de fundo mora no <html>, não no <body>, pra que o campo de linhas
+   (z-index -1) fique acima dela e abaixo de todo o conteúdo — sem precisar
+   listar os invólucros de cada tela, que era o jeito frágil de fazer isso. */
+html { background: var(--page-bg); }
 body {
   min-height: 100vh;
+  background: transparent;
   font-family: 'EB Garamond', serif;
 }
 a { color: inherit; }
@@ -131,7 +135,7 @@ a { color: inherit; }
   top: calc(100% + 6px);
   left: 0;
   z-index: 1100;
-  min-width: 232px;
+  min-width: 278px;
   padding: 6px;
   background: var(--panel);
   border: 1px solid rgba(182, 138, 78, 0.35);
@@ -161,11 +165,14 @@ a { color: inherit; }
 }
 .nav-item[aria-current="page"] .nav-here {
   margin-left: auto;
+  padding-left: 8px;
   font-size: 9px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--accent);
 }
+.nav-item > span:nth-child(2) { white-space: nowrap; }
 .nav-icon { font-size: 15px; width: 20px; text-align: center; }
 
 /* ---- campo de linhas (scripts/atmosfera.js) ----------------------------- */
@@ -175,19 +182,15 @@ a { color: inherit; }
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
 }
-/* o conteúdo das telas fica por cima da teia */
-.topbar { z-index: 1000; }
-.avesso-wrap, .hub-wrap, .dd-wrap, .dv-wrap, .mn-wrap, .mp-wrap,
-.ct-wrap, .mestre-wrap, .quadro-wrap, .gerador-wrap { position: relative; z-index: 1; }
 
 /* ---- ícones: emoji puxados pro latão -------------------------------------
    Emoji entram coloridos e saturados demais pro mundo do Avesso, e é o que
    mais quebra a coesão da paleta. Puxados pro latão, viram objeto de cena. */
 
-.portal-icon, .attr-icon, .kit-icon, .detail-icon, .locked-icon {
+.portal-icon, .attr-icon, .kit-icon, .detail-icon, .locked-icon, .nav-icon {
   filter: grayscale(0.82) sepia(0.62) saturate(1.5) hue-rotate(-12deg) brightness(0.95) contrast(1.05);
   transition: filter 0.35s ease, transform 0.35s cubic-bezier(.16, 1.1, .3, 1);
 }

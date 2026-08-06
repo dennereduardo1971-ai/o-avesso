@@ -1,7 +1,7 @@
 // manual.js — Manual do Jogador. Só leitura, sem storage: as regras não mudam
 // de aparelho pra aparelho, então não precisam de banco nenhum.
 
-import { initPage, ambientar } from './session.js';
+import { initPage, ambientar, seamHtml } from './session.js';
 
 await initPage({ escopo: 'compartilhado' });
 
@@ -14,7 +14,7 @@ document.getElementById('manual-root').innerHTML = `
         <p class="mn-tagline">"Do outro lado do espelho, tudo tem costura."</p>
       </div>
 
-      <div class="mn-seam"></div>
+      ${seamHtml()}
 
       <section class="mn-section">
         <p class="mn-num">1</p>

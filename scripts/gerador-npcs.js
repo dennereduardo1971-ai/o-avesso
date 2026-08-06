@@ -1,7 +1,7 @@
 // gerador-npcs.js — personagens de improviso, só pro mestre. A lista de
 // guardados é dele; não abre pros jogadores nem aparece no hub deles.
 
-import { initPage, storage, createSaver, escapeHtml, ambientar } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, ambientar, seamHtml } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-gerador-npcs';
 const COMPARTILHADO = false;
@@ -131,7 +131,7 @@ function render() {
           </div>
         ` : ''}
 
-        <div class="gn-seam"></div>
+        ${seamHtml()}
         <p class="gn-section-label">Guardados para usar depois</p>
         <div class="gn-saved-list">
           ${saved.length === 0 ? '<p class="gn-empty">nenhum personagem guardado ainda</p>' : saved.map((n, i) => `

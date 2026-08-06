@@ -1,7 +1,7 @@
 // caderno-mestre.js — só abre pra quem conduz o Avesso (ver MESTRE em db.js).
 // Os dados são pessoais do mestre: nem aparecem pros jogadores, nem no banco.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-caderno-mestre';
 const COMPARTILHADO = false;
@@ -62,7 +62,7 @@ function render() {
             <p class="subtitle">O que só você precisa lembrar.</p>
           </div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <div class="row-2">
             <div class="field">
@@ -91,7 +91,7 @@ function render() {
             </div>
           </div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <p class="section-label">
             <span>Personagens (NPCs)</span>
@@ -99,12 +99,12 @@ function render() {
           <div id="npc-list"></div>
           <div class="add-btn-row"><button class="mini-btn" id="add-npc">+ novo personagem</button></div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <p class="section-label">Verdades Esquecidas — notas reais</p>
           <div id="verdades-list"></div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <p class="section-label">
             <span>Mundo Persistente</span>
@@ -112,7 +112,7 @@ function render() {
           <div id="log-list"></div>
           <div class="add-btn-row"><button class="mini-btn" id="add-log">+ novo registro</button></div>
 
-          <div class="seam"></div>
+          ${seamHtml()}
 
           <p class="section-label">Notas Gerais / Ideias Futuras</p>
           <div class="field notas">

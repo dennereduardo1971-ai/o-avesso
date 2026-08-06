@@ -8,7 +8,6 @@
 #caderno-root * { box-sizing: border-box; }
 
 .mestre-wrap {
-  background: var(--bg-deep);
   background-image:
     radial-gradient(ellipse at 15% 0%, rgba(122,53,64,0.12), transparent 55%),
     radial-gradient(ellipse at 90% 100%, rgba(182,138,78,0.08), transparent 50%);
@@ -58,23 +57,6 @@
   font-size: 14px;
   color: var(--parchment-dim);
   margin: 4px 0 0;
-}
-
-.seam {
-  height: 14px;
-  margin: 22px 0 18px;
-  position: relative;
-}
-.seam::after {
-  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
-  position: absolute;
-  left: 0; right: 0; top: -6px;
-  text-align: center;
-  letter-spacing: 6px;
-  font-size: 9px;
-  color: var(--seam);
-  white-space: nowrap;
-  overflow: hidden;
 }
 
 .section-label {

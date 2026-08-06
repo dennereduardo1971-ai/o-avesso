@@ -3,7 +3,6 @@
 #conta-root * { box-sizing: border-box; }
 
 .ct-wrap {
-  background: var(--bg-deep);
   background-image:
     radial-gradient(ellipse at 20% 0%, rgba(63,95,127,0.10), transparent 55%),
     radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
@@ -19,13 +18,6 @@
 .ct-eyebrow { letter-spacing: 0.28em; font-size: 11px; text-transform: uppercase; color: var(--gold); margin: 0 0 6px; }
 .ct-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 36px; margin: 0; }
 .ct-subtitle { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--parchment-dim); margin: 4px 0 0; }
-
-.ct-seam { height: 14px; margin: 22px 0 20px; position: relative; }
-.ct-seam::after {
-  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
-  position: absolute; left: 0; right: 0; top: -6px; text-align: center;
-  letter-spacing: 6px; font-size: 9px; color: var(--seam); white-space: nowrap; overflow: hidden;
-}
 
 .ct-section {
   background: var(--panel);

@@ -1,6 +1,6 @@
 // diario.js — resumo de cada sessão. Compartilhado com a mesa inteira.
 
-import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
 
 const STORAGE_KEY = 'o-avesso-diario';
 const COMPARTILHADO = true;
@@ -60,7 +60,7 @@ function render() {
           <p class="dv-notice">Este diário é da mesa inteira — todo mundo que atravessa o espelho lê e escreve aqui. Use-o pra registrar o resumo de cada sessão, pra quem faltou nunca ficar perdida.</p>
         </div>
 
-        <div class="dv-seam"></div>
+        ${seamHtml()}
 
         <button class="dv-add-btn" id="add-entry">+ Nova Página</button>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'o-avesso-v11';
+const CACHE_NAME = 'o-avesso-v12';
 const APP_SHELL = [
   './',
   './index.html',
@@ -62,6 +62,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // nada de banco no cache: login e dados sempre vão na fonte
   if (event.request.url.includes('supabase.co')) return;
+  if (event.request.method !== 'GET') return;
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -70,7 +71,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Entrega o que está guardado na hora (abre rápido e funciona offline),
+  // mas busca a versão nova por trás e atualiza o cache pra próxima vez.
+  //
+  // Antes isto era só cache: quem esquecia de subir o CACHE_NAME ficava preso
+  // na versão antiga pra sempre, sem jeito de sair a não ser limpando o site
+  // na mão. Assim o esquecimento custa um carregamento, não uma eternidade.
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(event.request).then((cached) => {
+        const rede = fetch(event.request)
+          .then((resposta) => {
+            if (resposta && resposta.ok && resposta.type === 'basic') {
+              cache.put(event.request, resposta.clone());
+            }
+            return resposta;
+          })
+          .catch(() => cached);
+        return cached || rede;
+      })
+    )
   );
 });

@@ -2,7 +2,7 @@
 // senha. O login em si (o email fictício por baixo dos panos) não pode ser
 // trocado por aqui — ver a nota na própria tela.
 
-import { initPage, createSaver, escapeHtml, escapeAttr, ambientar } from './session.js';
+import { initPage, createSaver, escapeHtml, escapeAttr, ambientar, seamHtml } from './session.js';
 import { auth, setNomeExibicao } from './db.js';
 
 let nomeExibicao = '';
@@ -26,7 +26,7 @@ function render() {
           <p class="ct-subtitle">Como você aparece pra mesa, e como você entra.</p>
         </div>
 
-        <div class="ct-seam"></div>
+        ${seamHtml()}
 
         <section class="ct-section">
           <p class="ct-section-label">🪡 Nome de Exibição</p>

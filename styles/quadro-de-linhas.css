@@ -10,7 +10,6 @@
 #quadro-root * { box-sizing: border-box; }
 
 .qw-wrap {
-  background: var(--bg-deep);
   padding: 20px 14px 30px;
   font-family: 'EB Garamond', serif;
   color: var(--parchment);

@@ -7,7 +7,6 @@
 #mapa-root * { box-sizing: border-box; }
 
 .mp-wrap {
-  background: var(--bg-deep);
   background-image:
     radial-gradient(ellipse at 20% 0%, rgba(63,95,127,0.10), transparent 55%),
     radial-gradient(ellipse at 85% 100%, rgba(182,138,78,0.08), transparent 50%);
@@ -22,13 +21,6 @@
 .mp-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 36px; margin: 0; }
 .mp-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 13px; color: var(--parchment-dim); margin: 4px 0 0; }
 .mp-shared-note { font-size: 11px; font-style: italic; color: var(--parchment-dim); opacity: 0.85; margin: 8px 0 0; }
-
-.mp-seam { height: 14px; margin: 20px 0 20px; position: relative; }
-.mp-seam::after {
-  content: "✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕  ✕";
-  position: absolute; left:0; right:0; top:-6px; text-align:center;
-  letter-spacing:6px; font-size:9px; color: var(--seam); white-space: nowrap; overflow: hidden;
-}
 
 .map-stage {
   position: relative;

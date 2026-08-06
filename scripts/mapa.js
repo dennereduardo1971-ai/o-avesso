@@ -1,7 +1,7 @@
 // mapa.js — Mapa do Avesso. Compartilhado: é o mesmo mapa pra mesa inteira.
 // A névoa, porém, é do mestre: só ele revela (ou volta a esconder) uma região.
 
-import { initPage, storage, createSaver, escapeHtml, ambientar } from './session.js';
+import { initPage, storage, createSaver, escapeHtml, ambientar, seamHtml } from './session.js';
 
 const STORAGE_KEY = 'mapa-avesso';
 const COMPARTILHADO = true;
@@ -80,7 +80,7 @@ function render() {
             ? 'você enxerga o mapa inteiro — a mesa só vê o que você revelar'
             : 'mapa da mesa: as regiões na névoa aparecem quando o mestre as revelar'}</p>
         </div>
-        <div class="mp-seam"></div>
+        ${seamHtml()}
 
         <div class="map-stage" id="map-stage">
           <div class="map-border-note"></div>

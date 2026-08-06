@@ -30,9 +30,15 @@ const TELAS = [
   { arquivo: 'conta.html', icone: '🪞', nome: 'Minha Conta', tipo: 'neutro' }
 ];
 
+// Netlify e Vercel servem URL limpa: /pages/ficha em vez de /pages/ficha.html.
+// Comparar sem a extensão faz o menu marcar a página certa nos dois casos.
+function semExtensao(caminho) {
+  return String(caminho).replace(/\.html$/, '');
+}
+
 function paginaAtual() {
-  const partes = window.location.pathname.split('/');
-  return partes[partes.length - 1] || 'index.html';
+  const ultimo = window.location.pathname.split('/').pop();
+  return semExtensao(ultimo) || 'index';
 }
 
 function navHtml(user) {
@@ -40,7 +46,7 @@ function navHtml(user) {
   const itens = TELAS
     .filter((tela) => !tela.somenteMestre || user.isMestre)
     .map((tela) => {
-      const aqui = tela.arquivo === atual;
+      const aqui = semExtensao(tela.arquivo) === atual;
       return `
         <a class="nav-item ${tela.tipo}" href="${tela.arquivo}"${aqui ? ' aria-current="page"' : ''}>
           <span class="nav-icon" aria-hidden="true">${tela.icone}</span>
