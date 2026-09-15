@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Afinado — verificação</title>
+<link rel="stylesheet" href="../styles/estilo.css">
+<style>
+  main { max-width: 760px; }
+  .teste { border-bottom: 1px solid var(--borda); padding: 10px 0; }
+  .teste:last-child { border-bottom: none; }
+  .teste h3 { margin: 0 0 4px; font-size: 0.95rem; font-weight: 600; }
+  .teste p { margin: 0; color: var(--texto-fraco); font-size: 0.85rem; font-family: ui-monospace, SFMono-Regular, monospace; }
+  .passou h3::before { content: '✓ '; color: var(--afinado); }
+  .falhou h3::before { content: '✗ '; color: var(--longe); }
+  .falhou h3 { color: var(--longe); }
+  .placar { font-size: 1.1rem; font-weight: 600; }
+  .placar.tudo-bem { color: var(--afinado); }
+  .placar.tem-falha { color: var(--longe); }
+</style>
+</head>
+<body>
+<header class="topo">
+  <h1>Verificação</h1>
+  <p class="subtitulo">o motor de pitch contra tons de frequência conhecida</p>
+</header>
+
+<main>
+  <section class="painel">
+    <h2>Por que esta página existe</h2>
+    <p class="progresso-texto">
+      O app inteiro se apoia numa afirmação: o detector acerta a nota. Se ele
+      errar a oitava — e a autocorrelação que havia aqui antes errava, justamente
+      em voz masculina grave — o treinador passa a corrigir o que está certo, e
+      não há como perceber isso olhando a tela.
+    </p>
+    <p class="progresso-texto">
+      Então em vez de confiar no ouvido, esta página sintetiza tons de frequência
+      exata num <code>OfflineAudioContext</code>, passa cada um pelo mesmo YIN
+      que roda no worklet, e compara. A regressão que importa está nas duas
+      primeiras linhas: <strong>erro abaixo de 1 cent</strong> e
+      <strong>zero erro de oitava</strong>, de 80 a 900 Hz.
+    </p>
+    <button id="rodar" class="botao botao-primario largo">Rodar a verificação</button>
+    <p id="placar" class="placar" style="margin-top:12px"></p>
+  </section>
+
+  <section class="painel">
+    <h2>Resultados</h2>
+    <div id="saida"><p class="progresso-texto">Ainda não rodou.</p></div>
+  </section>
+
+  <a class="botao largo secundario" href="../index.html">Voltar ao app</a>
+</main>
+
+<script type="module" src="testes.js"></script>
+</body>
+</html>

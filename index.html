@@ -2,71 +2,38 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161b22">
-<meta name="description" content="Afinador vocal em tempo real para treinar e aprender a cantar afinado">
+<meta name="description" content="Treinador de canto que ouve a sua voz e diz onde ela está — afinação, extensão e progresso, tudo no seu aparelho.">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="assets/icone.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles/estilo.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<title>Afinado — afinador vocal</title>
+<title>Afinado — treinador de canto</title>
 </head>
 <body>
 <header class="topo">
-  <h1>Afinado</h1>
-  <p class="subtitulo">afine a voz, ouça a diferença, aprenda a cantar</p>
+  <a class="marca" href="#/">
+    <h1>Afinado</h1>
+    <p class="subtitulo">seu treinador de canto</p>
+  </a>
 </header>
 
-<main>
-  <section class="painel" aria-label="Afinador">
-    <div id="mostrador" class="mostrador">
-      <div class="escala">
-        <span>-50</span><span>0</span><span>+50</span>
-      </div>
-      <div class="arco">
-        <div id="ponteiro" class="ponteiro"></div>
-      </div>
-      <div class="leitura">
-        <span id="nota" class="nota">—</span><span id="oitava" class="oitava"></span>
-      </div>
-      <div id="frequencia" class="frequencia"></div>
-    </div>
-
-    <p id="status" class="status">Toque em "Ligar microfone" para começar.</p>
-    <button id="botao-mic" class="botao botao-primario">Ligar microfone</button>
-  </section>
-
-  <section class="painel" aria-label="Nota de referência">
-    <h2>Ouvir uma nota</h2>
-    <div class="linha">
-      <select id="alvo-nota"></select>
-      <button id="ouvir-alvo" class="botao">Tocar</button>
-    </div>
-  </section>
-
-  <section class="painel" aria-label="Exercício guiado">
-    <h2>Exercício: escala maior</h2>
-    <div class="linha">
-      <label for="exercicio-raiz">Começar em</label>
-      <select id="exercicio-raiz"></select>
-      <button id="exercicio-iniciar" class="botao botao-primario">Iniciar</button>
-      <button id="exercicio-parar" class="botao" disabled>Parar</button>
-    </div>
-    <div class="exercicio-status">
-      <span>Cante:</span>
-      <strong id="exercicio-alvo">—</strong>
-    </div>
-    <div class="barra-progresso"><div id="exercicio-barra" class="barra-preenchimento"></div></div>
-    <p id="exercicio-progresso" class="progresso-texto">Pronto para começar.</p>
-  </section>
+<main id="tela" aria-live="polite">
+  <noscript>
+    <section class="painel">
+      <h2>Precisa de JavaScript</h2>
+      <p class="progresso-texto">O Afinado escuta o microfone e calcula a afinação no próprio aparelho — sem JavaScript não há o que fazer.</p>
+    </section>
+  </noscript>
 </main>
 
 <footer class="rodape">
   <p>Tudo roda no seu navegador — nenhum áudio sai do seu aparelho.</p>
 </footer>
 
-<script type="module" src="scripts/app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
