@@ -1,14 +1,13 @@
-# Publica o Avesso no GitHub Pages a cada push na main.
+# Publica o Afinado no GitHub Pages a cada push na main.
 #
 # Não há build: o app é HTML/JS/CSS estático. O que este workflow faz de
 # verdade é três coisas —
 #
 #   1. carimba a versão no service-worker.js com o hash do commit, pra que
-#      cada publicação vire um cache novo sozinha (o jeito antigo era lembrar
-#      de subir um número na mão, e esquecer disso deixava a mesa presa numa
+#      cada publicação vire um cache novo sozinho (o jeito antigo era lembrar
+#      de subir um número na mão, e esquecer disso deixava o app preso numa
 #      versão antiga sem ninguém perceber);
-#   2. deixa de fora o que não é do site: a versão antiga guardada como
-#      histórico, o script que usa a service_role key, e os PDFs do manual;
+#   2. deixa de fora o que não é do site;
 #   3. empurra o resultado pro branch `gh-pages`, que é de onde o site é servido.
 #
 # POR QUE BRANCH, E NÃO `actions/deploy-pages`
@@ -62,14 +61,7 @@ jobs:
             --exclude '.github' \
             --exclude '.claude' \
             --exclude '_site' \
-            --exclude 'node_modules' \
-            --exclude 'o avesso app' \
-            --exclude 'create-users.js' \
-            --exclude 'gerar-chaves-push.js' \
-            --exclude 'token github.txt' \
-            --exclude '*.pdf' \
-            --exclude 'supabase' \
-            --exclude 'supabase-schema.sql'
+            --exclude 'node_modules'
           # sem isto o GitHub Pages passa o site pelo Jekyll e some com
           # qualquer arquivo começado por underscore
           touch _site/.nojekyll
@@ -87,4 +79,4 @@ jobs:
           git push --force \
             "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" \
             HEAD:gh-pages
-          echo "no ar em https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/pages/jogo.html"
+          echo "no ar em https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"

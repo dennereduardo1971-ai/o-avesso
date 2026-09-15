@@ -3,28 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#b68a4e">
-<meta http-equiv="refresh" content="0; url=./pages/jogo.html">
+<meta name="theme-color" content="#161b22">
+<meta name="description" content="Afinador vocal em tempo real para treinar e aprender a cantar afinado">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
-<title>O Avesso</title>
-<style>
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #14101a;
-    color: #cabfae;
-    font-family: 'EB Garamond', Georgia, serif;
-    font-style: italic;
-  }
-  a { color: #b68a4e; }
-</style>
+<link rel="icon" href="assets/icone.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles/estilo.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Afinado — afinador vocal</title>
 </head>
 <body>
-<p>atravessando o espelho... <a href="./pages/jogo.html">entrar</a></p>
-<script>location.replace('./pages/jogo.html');</script>
+<header class="topo">
+  <h1>Afinado</h1>
+  <p class="subtitulo">afine a voz, ouça a diferença, aprenda a cantar</p>
+</header>
+
+<main>
+  <section class="painel" aria-label="Afinador">
+    <div id="mostrador" class="mostrador">
+      <div class="escala">
+        <span>-50</span><span>0</span><span>+50</span>
+      </div>
+      <div class="arco">
+        <div id="ponteiro" class="ponteiro"></div>
+      </div>
+      <div class="leitura">
+        <span id="nota" class="nota">—</span><span id="oitava" class="oitava"></span>
+      </div>
+      <div id="frequencia" class="frequencia"></div>
+    </div>
+
+    <p id="status" class="status">Toque em "Ligar microfone" para começar.</p>
+    <button id="botao-mic" class="botao botao-primario">Ligar microfone</button>
+  </section>
+
+  <section class="painel" aria-label="Nota de referência">
+    <h2>Ouvir uma nota</h2>
+    <div class="linha">
+      <select id="alvo-nota"></select>
+      <button id="ouvir-alvo" class="botao">Tocar</button>
+    </div>
+  </section>
+
+  <section class="painel" aria-label="Exercício guiado">
+    <h2>Exercício: escala maior</h2>
+    <div class="linha">
+      <label for="exercicio-raiz">Começar em</label>
+      <select id="exercicio-raiz"></select>
+      <button id="exercicio-iniciar" class="botao botao-primario">Iniciar</button>
+      <button id="exercicio-parar" class="botao" disabled>Parar</button>
+    </div>
+    <div class="exercicio-status">
+      <span>Cante:</span>
+      <strong id="exercicio-alvo">—</strong>
+    </div>
+    <div class="barra-progresso"><div id="exercicio-barra" class="barra-preenchimento"></div></div>
+    <p id="exercicio-progresso" class="progresso-texto">Pronto para começar.</p>
+  </section>
+</main>
+
+<footer class="rodape">
+  <p>Tudo roda no seu navegador — nenhum áudio sai do seu aparelho.</p>
+</footer>
+
+<script type="module" src="scripts/app.js"></script>
 </body>
 </html>

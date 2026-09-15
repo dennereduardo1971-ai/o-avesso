@@ -1,21 +1,16 @@
 {
-  "name": "O Avesso",
-  "short_name": "O Avesso",
-  "description": "Atravesse o espelho e resolva os mistérios do Avesso",
-  "start_url": "./pages/jogo.html",
+  "name": "Afinado — auxílio ao canto",
+  "short_name": "Afinado",
+  "description": "Afinador vocal em tempo real para treinar e aprender a cantar afinado",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#14101a",
-  "theme_color": "#b68a4e",
+  "background_color": "#0d1117",
+  "theme_color": "#161b22",
   "lang": "pt-BR",
-  "categories": ["games", "entertainment"],
+  "categories": ["music", "education"],
   "icons": [
-    { "src": "./pages/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "./pages/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ],
-  "shortcuts": [
-    { "name": "Manual do Jogador", "url": "./pages/manual.html", "icons": [{ "src": "./pages/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "As telas da mesa", "url": "./pages/index.html", "icons": [{ "src": "./pages/icons/icon-192.png", "sizes": "192x192" }] }
+    { "src": "./assets/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
