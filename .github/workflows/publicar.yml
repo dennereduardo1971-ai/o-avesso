@@ -7,8 +7,13 @@
 #      cada publicação vire um cache novo sozinho (o jeito antigo era lembrar
 #      de subir um número na mão, e esquecer disso deixava o app preso numa
 #      versão antiga sem ninguém perceber);
-#   2. deixa de fora o que não é do site;
-#   3. empurra o resultado pro branch `gh-pages`, que é de onde o site é servido.
+#   2. gera a lista de arquivos do precache a partir do que existe no
+#      repositório — mesma história do item 1, um degrau acima: com o app
+#      dividido em dezenas de módulos, manter essa lista à mão era garantir
+#      que um dia faltaria um arquivo, e falta de arquivo ali só aparece
+#      offline, no aparelho de quem já instalou;
+#   3. deixa de fora o que não é do site;
+#   4. empurra o resultado pro branch `gh-pages`, que é de onde o site é servido.
 #
 # POR QUE BRANCH, E NÃO `actions/deploy-pages`
 # A via oficial via Actions (configure-pages + deploy-pages) ficou presa em
@@ -45,6 +50,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Gerar a lista de arquivos do precache
+        run: ./ferramentas/listar-arquivos.sh
+
       - name: Carimbar a versão no service worker
         run: |
           versao="${GITHUB_SHA::7}"
@@ -52,6 +60,23 @@ jobs:
           grep -q "const VERSAO = '${versao}';" service-worker.js \
             || { echo "::error::não consegui carimbar a versão — o marcador em service-worker.js mudou?"; exit 1; }
           echo "publicando como $versao"
+
+      # Se a lista gerada acima apontar pra um arquivo que não existe, o
+      # service worker não instala e o app para de funcionar offline sem
+      # avisar ninguém. Conferir aqui custa um segundo e pega isso antes de ir
+      # pro ar.
+      - name: Conferir que todo arquivo listado existe
+        run: |
+          faltando=0
+          while read -r caminho; do
+            [[ -z "$caminho" || "$caminho" == "./" ]] && continue
+            if [[ ! -f "$caminho" ]]; then
+              echo "::error::o precache lista $caminho, que não existe"
+              faltando=1
+            fi
+          done < <(sed -n "/INICIO-LISTA/,/FIM-LISTA/p" service-worker.js \
+                   | grep -o "'\./[^']*'" | tr -d "'")
+          exit $faltando
 
       - name: Separar o que vai pro ar
         run: |
@@ -61,7 +86,11 @@ jobs:
             --exclude '.github' \
             --exclude '.claude' \
             --exclude '_site' \
+            --exclude 'ferramentas' \
             --exclude 'node_modules'
+          # verificacao/ vai junto de propósito: é a página que roda o motor de
+          # pitch contra tons sintetizados, e rodá-la no celular de verdade
+          # (e não só no navegador do computador) é metade do teste
           # sem isto o GitHub Pages passa o site pelo Jekyll e some com
           # qualquer arquivo começado por underscore
           touch _site/.nojekyll

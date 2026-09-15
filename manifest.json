@@ -1,8 +1,8 @@
 {
-  "name": "Afinado — auxílio ao canto",
+  "name": "Afinado — treinador de canto",
   "short_name": "Afinado",
-  "description": "Afinador vocal em tempo real para treinar e aprender a cantar afinado",
-  "start_url": "./index.html",
+  "description": "Treinador de canto que ouve a sua voz e diz onde ela está — afinação, extensão e progresso, tudo no seu aparelho",
+  "start_url": "./index.html#/",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
