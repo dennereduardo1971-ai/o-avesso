@@ -24,11 +24,16 @@ const ARQUIVOS_BASICOS = [
   './',
   // INICIO-LISTA
   './app.js',
+  './assets/icone-180.png',
+  './assets/icone-192.png',
+  './assets/icone-512.png',
   './assets/icone.svg',
+  './audio/dispositivo.js',
   './audio/fala.js',
   './audio/motor.js',
   './audio/notas.js',
   './audio/sintese.js',
+  './audio/timbre.js',
   './audio/yin-worklet.js',
   './audio/yin.js',
   './dados/banco.js',
@@ -36,13 +41,25 @@ const ARQUIVOS_BASICOS = [
   './manifest.json',
   './styles/estilo.css',
   './telas/afinador.js',
+  './telas/aquecimento.js',
+  './telas/checkin.js',
+  './telas/deriva.js',
   './telas/diagnostico.js',
   './telas/inicio.js',
   './telas/resumo.js',
+  './telas/tom.js',
   './telas/treino.js',
+  './treino/aquecimento.js',
+  './treino/checkin.js',
+  './treino/deriva.js',
   './treino/exercicios/afinacao.js',
+  './treino/guia.js',
   './treino/perfil.js',
+  './treino/retorno.js',
+  './treino/sessao.js',
   './treino/tolerancia.js',
+  './treino/tom.js',
+  './treino/vibrato.js',
   './treino/voz.js',
   './ui/painel-exercicio.js',
   './ui/rolagem.js',
@@ -69,8 +86,18 @@ self.addEventListener('install', (evento) => {
       })
     )
   );
-  // sem skipWaiting: a versão nova espera a pessoa recarregar, pra que uma
-  // sessão em andamento nunca troque de versão embaixo de quem está cantando
+  // sem skipWaiting aqui: a versão nova fica esperando. Quem decide a troca é
+  // a pessoa, tocando no aviso de versão nova (ver app.js) — assim uma sessão
+  // em andamento nunca troca de versão embaixo de quem está cantando.
+  //
+  // E não dá pra contar com "recarregar": com o app instalado, recarregar não
+  // solta a versão velha — ela só sai quando todas as janelas do app fecham, o
+  // que no celular quase nunca acontece. Sem o aviso, o app ficava semanas
+  // numa versão antiga sem ninguém saber.
+});
+
+self.addEventListener('message', (evento) => {
+  if (evento.data === 'assumir') self.skipWaiting();
 });
 
 self.addEventListener('activate', (evento) => {
@@ -100,6 +127,29 @@ self.addEventListener('fetch', (evento) => {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  // Em desenvolvimento (VERSAO ainda 'dev', sem o carimbo da CI) a rede vem
+  // primeiro: cache primeiro servia o arquivo de antes da última edição e
+  // fazia bug corrigido parecer bug vivo. O cache continua sendo preenchido,
+  // então o teste offline local segue funcionando.
+  if (VERSAO === 'dev') {
+    evento.respondWith(
+      fetch(pedido)
+        .then((resposta) => {
+          if (resposta && resposta.ok) {
+            const copia = resposta.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(pedido, copia));
+          }
+          return resposta;
+        })
+        .catch(() =>
+          caches.match(pedido).then((resposta) =>
+            resposta || (pedido.mode === 'navigate' ? caches.match('./index.html') : Response.error())
+          )
+        )
+    );
+    return;
+  }
 
   evento.respondWith(
     caches.match(pedido).then((resposta) => {

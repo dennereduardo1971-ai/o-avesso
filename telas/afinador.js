@@ -72,6 +72,7 @@ export async function montar(raiz) {
   let ligado = false;
   let desinscrever = null;
   let ultimoDesenho = 0;
+  let avisoDoMicrofone = null;
 
   function mostrarVazio() {
     elNota.textContent = '—';
@@ -92,13 +93,13 @@ export async function montar(raiz) {
     ultimoDesenho = agora;
 
     if (!frequencia) {
-      elStatus.textContent = 'Escutando… cante ou toque uma nota perto do microfone.';
+      elStatus.textContent = avisoDoMicrofone || 'Escutando… cante ou toque uma nota perto do microfone.';
       mostrarVazio();
       return;
     }
 
     const nota = frequenciaParaNota(frequencia);
-    elStatus.textContent = 'Ouvindo';
+    elStatus.textContent = avisoDoMicrofone || 'Ouvindo';
     elNota.textContent = nota.nome;
     elOitava.textContent = String(nota.oitava);
     elCifra.textContent = `${nota.cifra}${nota.oitava}`;
@@ -124,7 +125,8 @@ export async function montar(raiz) {
     ligado = true;
     desinscrever = aoDetectar(receber);
     elBotaoMic.textContent = 'Desligar microfone';
-    elStatus.textContent = 'Escutando…';
+    avisoDoMicrofone = resultado.aviso;
+    elStatus.textContent = avisoDoMicrofone || 'Escutando…';
   }
 
   function desligar() {

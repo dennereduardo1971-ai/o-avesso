@@ -4,12 +4,14 @@
 // mediu, as notas em que você erra e o histórico das sessões ficam num
 // IndexedDB local — se você limpar os dados do navegador, some. Isso é o
 // preço de não ter cadastro, e é um preço que vale: o app é de graça, funciona
-// offline e nenhuma gravação sua sai do aparelho. (A Fase 4 acrescenta
-// exportar/importar num arquivo, que é o jeito honesto de fazer backup sem
-// servidor.)
+// offline e nenhuma gravação sua sai do aparelho. O backup é um arquivo que a
+// própria pessoa salva e restaura (`exportarTudo` / `importarTudo`) — o jeito
+// honesto de fazer backup sem servidor.
 
 const NOME_BANCO = 'afinado';
-const VERSAO_BANCO = 1;
+// Versão 2 acrescenta a loja 'vozes' (o guia com a própria voz). A migração só
+// CRIA o que falta — perfil e sessões de quem já usa o app passam intactos.
+const VERSAO_BANCO = 2;
 const CHAVE_PERFIL = 'eu';
 const CHAVE_LOCAL = 'afinado:perfil';
 
@@ -62,6 +64,9 @@ function abrir() {
       const banco = pedido.result;
       if (!banco.objectStoreNames.contains('perfil')) {
         banco.createObjectStore('perfil', { keyPath: 'id' });
+      }
+      if (!banco.objectStoreNames.contains('vozes')) {
+        banco.createObjectStore('vozes', { keyPath: 'midi' });
       }
       if (!banco.objectStoreNames.contains('sessoes')) {
         const sessoes = banco.createObjectStore('sessoes', { keyPath: 'id', autoIncrement: true });
@@ -122,7 +127,22 @@ export async function lerPerfil() {
 // Mescla um pedaço por cima do perfil guardado. Mesclar em vez de substituir
 // evita a classe de bug mais chata aqui: uma tela salvar o que sabe e apagar
 // sem querer o que ela não sabe.
-export async function salvarPerfil(parcial) {
+//
+// E as gravações vão em FILA. Mesclar é ler-e-depois-escrever: duas gravações
+// ao mesmo tempo liam o mesmo perfil antigo, e a segunda apagava o que a
+// primeira tinha acabado de salvar (marcar "já canto bem" e trocar o modo da
+// linha em seguida perdia o nível). Com a fila, cada uma lê o que a anterior
+// escreveu.
+let filaDeGravacao = Promise.resolve();
+
+export function salvarPerfil(parcial) {
+  const vez = filaDeGravacao.then(() => gravarPerfilAgora(parcial));
+  // a fila segue mesmo se uma gravação falhar
+  filaDeGravacao = vez.catch(() => {});
+  return vez;
+}
+
+async function gravarPerfilAgora(parcial) {
   const atual = await lerPerfil();
   const novo = {
     ...atual,
@@ -175,9 +195,43 @@ export async function listarSessoes({ limite = 50 } = {}) {
   }
 }
 
+// Afinação e teste são sessões de treino; aquecimento e check-in moram na
+// mesma loja mas não são treino — quem mostra "última sessão" ou resumo filtra
+// por estes tipos, senão um check-in apareceria como treino sem medida.
+export const TIPOS_DE_TREINO = ['afinacao', 'diagnostico'];
+
+// `tipo` pode ser um tipo só ou uma lista deles.
 export async function ultimaSessao(tipo) {
+  const aceitos = tipo ? [].concat(tipo) : null;
   const sessoes = await listarSessoes({ limite: 30 });
-  return sessoes.find((s) => !tipo || s.tipo === tipo) || null;
+  return sessoes.find((s) => !aceitos || aceitos.includes(s.tipo)) || null;
+}
+
+// --- a própria voz (guia) ----------------------------------------------
+//
+// Uma gravação por nota: a melhor que a pessoa já cantou. Fica FORA da cópia
+// de segurança (é áudio, e pesado) e fora do `apagarTudo` — restaurar uma
+// cópia não deve apagar as gravações que estão aqui.
+
+export async function lerVozes() {
+  try {
+    return await transacionar('vozes', 'readonly', (loja) => loja.getAll());
+  } catch {
+    return [];
+  }
+}
+
+export async function guardarVoz(registro) {
+  try {
+    await transacionar('vozes', 'readwrite', (loja) => loja.put(registro));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function apagarVozes() {
+  try { await transacionar('vozes', 'readwrite', (loja) => loja.clear()); } catch { /* não havia */ }
 }
 
 export async function apagarTudo() {
@@ -188,6 +242,53 @@ export async function apagarTudo() {
     await transacionar('perfil', 'readwrite', (loja) => loja.clear());
     await transacionar('sessoes', 'readwrite', (loja) => loja.clear());
   } catch { /* não havia banco */ }
+}
+
+// --- cópia de segurança -------------------------------------------------
+
+const FORMATO_DA_COPIA = 'afinado-copia';
+const VERSAO_DA_COPIA = 1;
+
+export async function exportarTudo() {
+  return {
+    formato: FORMATO_DA_COPIA,
+    versao: VERSAO_DA_COPIA,
+    exportadoEm: new Date().toISOString(),
+    perfil: await lerPerfil(),
+    sessoes: await listarSessoes({ limite: Infinity }),
+  };
+}
+
+// Confere a cópia inteira antes de apagar qualquer coisa: um arquivo errado
+// escolhido por engano não pode custar o histórico que já estava aqui.
+export function validarCopia(copia) {
+  if (!copia || typeof copia !== 'object') return 'Esse arquivo não é uma cópia do Afinado.';
+  if (copia.formato !== FORMATO_DA_COPIA) return 'Esse arquivo não é uma cópia do Afinado.';
+  if (!(copia.versao <= VERSAO_DA_COPIA)) return 'Essa cópia é de uma versão mais nova do app. Atualize o app antes.';
+  if (!copia.perfil || typeof copia.perfil !== 'object') return 'A cópia está sem o perfil — o arquivo pode estar corrompido.';
+  if (!Array.isArray(copia.sessoes)) return 'A cópia está sem as sessões — o arquivo pode estar corrompido.';
+  if (copia.sessoes.some((s) => !s || !Number.isFinite(s.data))) return 'Há sessões sem data na cópia — o arquivo pode estar corrompido.';
+  return null;
+}
+
+// Substitui tudo que há no aparelho pelo que está na cópia.
+export async function importarTudo(copia) {
+  const problema = validarCopia(copia);
+  if (problema) throw new Error(problema);
+
+  await apagarTudo();
+  await salvarPerfil({ ...copia.perfil, id: CHAVE_PERFIL });
+  // Em ordem de data, e sem o id antigo: o banco numera de novo, e a ordem é
+  // o que as telas usam.
+  const ordenadas = [...copia.sessoes].sort((a, b) => a.data - b.data);
+  for (const { id, ...sessao } of ordenadas) {
+    try {
+      await transacionar('sessoes', 'readwrite', (loja) => loja.add(sessao));
+    } catch {
+      memoria.sessoes.push({ id: memoria.sessoes.length + 1, ...sessao });
+    }
+  }
+  return { sessoes: ordenadas.length };
 }
 
 export function guardaConfiavel() {

@@ -5,34 +5,66 @@
 // aguenta ficar. Exercício bom acontece na tessitura; o extremo agudo é meta,
 // não lugar de morar.
 //
-// Enquanto não há medida, o app assume barítono (A2–A4 de extensão, A2–F4 de
-// tessitura), que é a referência mais provável aqui. Assim que o teste inicial
-// roda, a medida real substitui o palpite — todo exercício é gerado em torno
-// da voz que existe, não de uma faixa de catálogo.
+// Enquanto não há medida, o app parte de um palpite pelo tipo de voz que a
+// pessoa diz ter: "mais grave" é barítono (A2–A4), "mais aguda" é a mesma
+// faixa uma oitava acima (A3–A5), que é onde a maioria das vozes femininas
+// mora. Assim que o teste inicial roda, a medida real substitui o palpite —
+// todo exercício é gerado em torno da voz que existe, não de uma faixa de
+// catálogo.
 
 import { notasEntre } from '../audio/notas.js';
 
-// A2 = 45, F4 = 65, A4 = 69.
-export const EXTENSAO_PADRAO = { midiMinimo: 45, midiMaximo: 69 };
-export const TESSITURA_PADRAO = { midiMinimo: 45, midiMaximo: 65 };
+// Passaggio: as duas passagens onde o registro troca e a afinação costuma
+// escorregar. São aproximadas — variam de pessoa pra pessoa — e o app só as
+// usa pra *adiar* essas notas nos primeiros exercícios, nunca pra proibir
+// nada. Na voz aguda não é o barítono uma oitava acima: a primeira passagem
+// feminina fica perto de Mi4–Fá4 e a segunda perto de Dó#5–Ré5.
+//
+// `referencias` são as notas de partida do teste inicial: de onde começar a
+// descer e de onde começar a subir. Começar o grave de uma voz feminina em
+// Sol3 é começar perto do fundo dela.
+export const VOZES = {
+  grave: {
+    id: 'grave',
+    nome: 'mais grave',
+    extensao: { midiMinimo: 45, midiMaximo: 69 }, // A2–A4
+    passaggio: [
+      { midiMinimo: 59, midiMaximo: 60 }, // Si3–Dó4
+      { midiMinimo: 64, midiMaximo: 65 }, // Mi4–Fá4
+    ],
+    referencias: { grave: 55, agudo: 64 }, // Sol3, Mi4
+  },
+  aguda: {
+    id: 'aguda',
+    nome: 'mais aguda',
+    extensao: { midiMinimo: 57, midiMaximo: 81 }, // A3–A5
+    passaggio: [
+      { midiMinimo: 64, midiMaximo: 65 }, // Mi4–Fá4
+      { midiMinimo: 73, midiMaximo: 74 }, // Dó#5–Ré5
+    ],
+    referencias: { grave: 67, agudo: 76 }, // Sol4, Mi5
+  },
+};
 
-// Passaggio de barítono: as duas passagens onde o registro troca e a afinação
-// costuma escorregar. São aproximadas — variam de pessoa pra pessoa — e o app
-// só as usa pra *adiar* essas notas nos primeiros exercícios, nunca pra
-// proibir nada.
-export const PASSAGGIO = [
-  { midiMinimo: 59, midiMaximo: 60 }, // Si3–Dó4
-  { midiMinimo: 64, midiMaximo: 65 }, // Mi4–Fá4
-];
+// O palpite de antes de haver escolha nenhuma continua sendo barítono — é o
+// que o app sempre fez, e quem já usa não vê nada mudar.
+export const EXTENSAO_PADRAO = VOZES.grave.extensao;
+export const PASSAGGIO = VOZES.grave.passaggio;
 
-export function ehPassaggio(midi) {
-  return PASSAGGIO.some((faixa) => midi >= faixa.midiMinimo && midi <= faixa.midiMaximo);
+export function vozDoPerfil(perfil) {
+  const escolhida = perfil && perfil.preferencias && perfil.preferencias.voz;
+  return VOZES[escolhida] ? escolhida : 'grave';
+}
+
+export function ehPassaggio(midi, voz = 'grave') {
+  const faixas = (VOZES[voz] || VOZES.grave).passaggio;
+  return faixas.some((faixa) => midi >= faixa.midiMinimo && midi <= faixa.midiMaximo);
 }
 
 export function extensaoDoPerfil(perfil) {
   const medida = perfil && perfil.extensao;
   if (!medida || !Number.isFinite(medida.midiMinimo) || !Number.isFinite(medida.midiMaximo)) {
-    return { ...EXTENSAO_PADRAO, estimada: true };
+    return { ...VOZES[vozDoPerfil(perfil)].extensao, estimada: true };
   }
   return { midiMinimo: medida.midiMinimo, midiMaximo: medida.midiMaximo, estimada: false };
 }
@@ -83,12 +115,12 @@ export function notasDeDiagnostico(extensao, quantidade = 8) {
 // perfil serve), completadas com notas confortáveis da tessitura, e o
 // passaggio deixado para o fim — quando a voz já está aquecida.
 //
-// Uma tessitura de barítono tem umas vinte notas, e uma sessão de vinte
+// Uma tessitura tem umas vinte notas, e uma sessão de vinte
 // minutos pede mais que isso. Então a fila repete: volta ao começo e passa de
 // novo, o que é o que um exercício de canto faz mesmo — ninguém aprende uma
 // nota vendo ela uma vez. O que não pode é a sessão acabar cedo porque a lista
 // acabou, que é o que acontecia antes desta função repetir.
-export function notasDeTreino(extensao, { notasFracas = [], quantidade = 12 } = {}) {
+export function notasDeTreino(extensao, { notasFracas = [], quantidade = 12, voz = 'grave' } = {}) {
   const disponiveis = notasDaTessitura(extensao);
   if (!disponiveis.length) return [];
 
@@ -101,7 +133,7 @@ export function notasDeTreino(extensao, { notasFracas = [], quantidade = 12 } = 
 
   const restantes = disponiveis
     .filter((midi) => !primeiraVolta.includes(midi))
-    .sort((a, b) => Number(ehPassaggio(a)) - Number(ehPassaggio(b)));
+    .sort((a, b) => Number(ehPassaggio(a, voz)) - Number(ehPassaggio(b, voz)));
 
   primeiraVolta.push(...restantes);
 

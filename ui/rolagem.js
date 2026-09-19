@@ -32,6 +32,10 @@ export function criarRolagem(canvas) {
   let blocos = [];
   const rastro = [];
   let rodando = false;
+  // Ensaio às cegas: a voz continua sendo gravada no rastro, só não é
+  // desenhada. Quando o ensaio acaba o rastro inteiro aparece de uma vez —
+  // é o retorno depois da nota (ver treino/retorno.js).
+  let vozVisivel = true;
   let obterTempo = () => performance.now();
   let cores = lerCores();
 
@@ -111,7 +115,7 @@ export function criarRolagem(canvas) {
 
     desenharGrade();
     desenharBlocos(agora);
-    desenharRastro(agora);
+    if (vozVisivel) desenharRastro(agora);
     desenharAgora();
   }
 
@@ -315,6 +319,7 @@ export function criarRolagem(canvas) {
     parar,
     limpar,
     redimensionar,
+    definirVozVisivel(valor) { vozVisivel = !!valor; },
     destruir() {
       parar();
       window.removeEventListener('resize', aoRedimensionar);

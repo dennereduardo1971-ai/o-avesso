@@ -18,6 +18,7 @@
 
 import { criarDetectorYin, FREQUENCIA_MINIMA, FREQUENCIA_MAXIMA } from './yin.js';
 import { notaParaFrequencia } from './notas.js';
+import { rotuloDoMicrofone, pareceBluetooth, AVISO_BLUETOOTH } from './dispositivo.js';
 
 const TAMANHO_JANELA = 2048;
 const SALTO = 512;
@@ -30,6 +31,7 @@ let no = null;           // AudioWorkletNode ou AnalyserNode, conforme o caminho
 let relogioFallback = null;
 let detectorFallback = null;
 let quadroFallback = null;
+let descartarFallbackAte = 0;
 
 let escutando = false;
 let pausas = 0;          // pausas empilham: fala dentro de síntese não religa cedo
@@ -57,7 +59,10 @@ export function saidaMestre() {
 
 export async function acordarContexto() {
   const ctx = obterContexto();
-  if (ctx.state === 'suspended') {
+  // 'interrupted' é o estado do Safari depois de uma ligação, da Siri ou de
+  // outro app tomar o áudio — sem tratar ele junto, o app ficava mudo até
+  // recarregar.
+  if (ctx.state !== 'running') {
     try { await ctx.resume(); } catch { /* o navegador dirá não até haver um toque */ }
   }
   return ctx.state === 'running';
@@ -110,7 +115,13 @@ export async function ligarEscuta() {
 
   escutando = true;
   pausas = 0;
-  return { ok: true, caminho: viaWorklet ? 'worklet' : 'thread-principal' };
+  const microfone = await rotuloDoMicrofone(stream);
+  return {
+    ok: true,
+    caminho: viaWorklet ? 'worklet' : 'thread-principal',
+    microfone,
+    aviso: pareceBluetooth(microfone) ? AVISO_BLUETOOTH : null,
+  };
 }
 
 function motivoDoErroDeMicrofone(erro) {
@@ -142,6 +153,11 @@ async function tentarWorklet(ctx) {
       },
     });
     no.port.onmessage = ({ data }) => {
+      if (data && data.tipo === 'captura') {
+        const pendente = capturasPendentes.get(data.pedido);
+        if (pendente) { capturasPendentes.delete(data.pedido); pendente({ dados: data.dados, taxa: data.taxa }); }
+        return;
+      }
       anunciar({
         frequencia: data.frequencia,
         clareza: data.clareza,
@@ -179,6 +195,10 @@ function ligarFallback(ctx) {
   // porque a aba perdeu o foco no meio de um exercício sem mãos.
   relogioFallback = setInterval(() => {
     if (pausas > 0) return;
+    // Logo depois de uma pausa o analisador ainda guarda o rabo do som-guia
+    // (uma janela inteira). O worklet descarta o anel ao retomar; aqui o
+    // equivalente é esperar a janela passar.
+    if (performance.now() < descartarFallbackAte) return;
     analisador.getFloatTimeDomainData(quadroFallback);
     const leitura = detectorFallback.detectar(quadroFallback);
     anunciar({
@@ -205,6 +225,27 @@ export function desligarEscuta() {
   anunciar({ frequencia: -1, clareza: 0, rms: 0, tempo: performance.now() });
 }
 
+// --- captura de áudio cru ----------------------------------------------
+
+const capturasPendentes = new Map();
+let proximoPedido = 1;
+
+// Os últimos `ms` milissegundos do microfone, como Float32Array + taxa. Só
+// existe no caminho do worklet: no caminho de reserva não há anel longo, e o
+// guia com a própria voz simplesmente não grava nada.
+export function capturarUltimos(ms) {
+  if (!no || !no.port || relogioFallback) return Promise.resolve(null);
+  const pedido = proximoPedido++;
+  return new Promise((resolver) => {
+    capturasPendentes.set(pedido, resolver);
+    no.port.postMessage({ tipo: 'capturar', ms, pedido });
+    // sem resposta em 1 s, desiste — não pode travar a sessão
+    setTimeout(() => {
+      if (capturasPendentes.has(pedido)) { capturasPendentes.delete(pedido); resolver(null); }
+    }, 1000);
+  });
+}
+
 // --- pausar para tocar -------------------------------------------------
 
 function avisarWorklet(valor) {
@@ -222,7 +263,12 @@ export function pausarEscuta() {
 export function retomarEscuta() {
   if (pausas === 0) return;
   pausas--;
-  if (pausas === 0) avisarWorklet(true);
+  if (pausas === 0) {
+    avisarWorklet(true);
+    if (relogioFallback && contexto) {
+      descartarFallbackAte = performance.now() + (TAMANHO_JANELA / contexto.sampleRate) * 1000 + 20;
+    }
+  }
 }
 
 export function escutaPausada() {

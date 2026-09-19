@@ -14,6 +14,8 @@
 
 import { obterContexto, saidaMestre, comEscutaPausada } from './motor.js';
 import { notaParaFrequencia } from './notas.js';
+import { formantesPara, ganhoDeCompensacao } from './timbre.js';
+import { escolherGravacao, taxaDeReproducao } from '../treino/guia.js';
 
 const emAndamento = new Set();
 
@@ -82,19 +84,25 @@ export function tocarPiano(midi, duracao = 0.9, volume = 0.5) {
 
 // --- tom vocal ---------------------------------------------------------
 
-// Formantes de um /a/ neutro. São eles que fazem o ouvido reconhecer "voz" em
+// As formantes de um /a/ neutro são o que faz o ouvido reconhecer "voz" em
 // vez de "sintetizador": a fonte é a mesma serra, o que muda é quais faixas do
-// espectro passam.
-const FORMANTES = [
-  { frequencia: 700, q: 9, ganho: 1.0 },
-  { frequencia: 1220, q: 11, ganho: 0.5 },
-  { frequencia: 2600, q: 13, ganho: 0.22 },
-];
+// espectro passam. No agudo a primeira formante sobe junto com a nota e o
+// volume é compensado nota a nota — ver audio/timbre.js.
 
 export function tocarTomVocal(midi, duracao = 1.4, volume = 0.32) {
   const ctx = obterContexto();
-  const agora = ctx.currentTime;
+  const nos = montarTomVocal(ctx, saidaMestre(), midi, { duracao, volume, inicio: ctx.currentTime });
+  registrar(nos, duracao * 1000);
+  return esperar(duracao * 1000);
+}
+
+// Monta o grafo do tom vocal em qualquer contexto — o do app ou um
+// OfflineAudioContext da verificação, que mede o volume nota a nota com este
+// mesmo código.
+export function montarTomVocal(ctx, destino, midi, { duracao = 1.4, volume = 0.32, inicio = 0 } = {}) {
+  const agora = inicio;
   const frequencia = notaParaFrequencia(midi);
+  const volumeDaNota = volume * ganhoDeCompensacao(frequencia);
 
   const osc = ctx.createOscillator();
   osc.type = 'sawtooth';
@@ -113,13 +121,13 @@ export function tocarTomVocal(midi, duracao = 1.4, volume = 0.32) {
 
   const envelope = ctx.createGain();
   envelope.gain.setValueAtTime(0.0001, agora);
-  envelope.gain.exponentialRampToValueAtTime(volume, agora + 0.09);
-  envelope.gain.setValueAtTime(volume, agora + duracao - 0.18);
+  envelope.gain.exponentialRampToValueAtTime(volumeDaNota, agora + 0.09);
+  envelope.gain.setValueAtTime(volumeDaNota, agora + duracao - 0.18);
   envelope.gain.exponentialRampToValueAtTime(0.0001, agora + duracao);
 
   const soma = ctx.createGain();
   soma.gain.value = 1;
-  for (const formante of FORMANTES) {
+  for (const formante of formantesPara(frequencia)) {
     const filtro = ctx.createBiquadFilter();
     filtro.type = 'bandpass';
     filtro.frequency.value = formante.frequencia;
@@ -128,15 +136,14 @@ export function tocarTomVocal(midi, duracao = 1.4, volume = 0.32) {
     ganhoFormante.gain.value = formante.ganho;
     osc.connect(filtro).connect(ganhoFormante).connect(soma);
   }
-  soma.connect(envelope).connect(saidaMestre());
+  soma.connect(envelope).connect(destino);
 
   osc.start(agora);
   lfo.start(agora);
   osc.stop(agora + duracao + 0.05);
   lfo.stop(agora + duracao + 0.05);
 
-  registrar([osc, lfo], duracao * 1000);
-  return esperar(duracao * 1000);
+  return [osc, lfo];
 }
 
 // --- sinais curtos -----------------------------------------------------
@@ -168,15 +175,77 @@ export function tocarSinal(tipo) {
   return esperar(280);
 }
 
+// --- guia com a própria voz ------------------------------------------
+//
+// Quando a pessoa ligou o guia com a própria voz, a tela de treino entrega
+// aqui as gravações (midi → registro guardado). A apresentação da nota passa
+// a usar a gravação mais próxima no lugar do tom sintético — ver
+// treino/guia.js pro porquê.
+
+let gravacoesDoGuia = null;
+const buffersDoGuia = new Map();
+let fonteDoUltimoGuia = null;   // 'propria-voz' | 'sintetico' — pra verificação
+
+export function definirGravacoesDoGuia(mapa) {
+  gravacoesDoGuia = mapa && mapa.size ? mapa : null;
+  buffersDoGuia.clear();
+}
+
+export function ultimaFonteDoGuia() {
+  return fonteDoUltimoGuia;
+}
+
+// O mesmo nível de energia do tom vocal (−30 dB eficaz), pra trocar de guia
+// não mudar o volume.
+const RMS_DO_GUIA = 0.032;
+
+function bufferDe(registro) {
+  let buffer = buffersDoGuia.get(registro.midi);
+  if (buffer) return buffer;
+  const ctx = obterContexto();
+  const pcm = registro.pcm instanceof Int16Array ? registro.pcm : new Int16Array(registro.pcm);
+  buffer = ctx.createBuffer(1, pcm.length, registro.taxa);
+  const canal = buffer.getChannelData(0);
+  for (let i = 0; i < pcm.length; i++) canal[i] = pcm[i] / 32767;
+  buffersDoGuia.set(registro.midi, buffer);
+  return buffer;
+}
+
+function tocarGravacao(escolha, midi, duracao) {
+  const ctx = obterContexto();
+  const agora = ctx.currentTime;
+  const fonte = ctx.createBufferSource();
+  fonte.buffer = bufferDe(escolha.registro);
+  fonte.playbackRate.value = taxaDeReproducao(escolha.registro, midi);
+
+  const volume = Math.min(8, RMS_DO_GUIA / Math.max(1e-4, escolha.registro.rms));
+  const dur = Math.min(duracao, fonte.buffer.duration / fonte.playbackRate.value);
+  const envelope = ctx.createGain();
+  envelope.gain.setValueAtTime(0.0001, agora);
+  envelope.gain.exponentialRampToValueAtTime(volume, agora + 0.06);
+  envelope.gain.setValueAtTime(volume, agora + Math.max(0.07, dur - 0.12));
+  envelope.gain.exponentialRampToValueAtTime(0.0001, agora + dur);
+
+  fonte.connect(envelope).connect(saidaMestre());
+  fonte.start(agora);
+  fonte.stop(agora + dur + 0.02);
+  registrar([fonte], dur * 1000);
+  return esperar(dur * 1000);
+}
+
 // --- apresentação da nota ----------------------------------------------
 
-// A sequência completa: piano diz qual é a nota, tom vocal mostra como ela
-// soa cantada, e só então o microfone volta a escutar.
+// A sequência completa: piano diz qual é a nota, a voz (a própria, se houver
+// gravação; senão o tom vocal) mostra como ela soa cantada, e só então o
+// microfone volta a escutar.
 export async function apresentarNota(midi, { duracaoPiano = 0.75, duracaoVocal = 1.5 } = {}) {
   return comEscutaPausada(async () => {
     await tocarPiano(midi, duracaoPiano);
     await esperar(80);
-    await tocarTomVocal(midi, duracaoVocal);
+    const escolha = escolherGravacao(gravacoesDoGuia, midi);
+    fonteDoUltimoGuia = escolha ? 'propria-voz' : 'sintetico';
+    if (escolha) await tocarGravacao(escolha, midi, duracaoVocal);
+    else await tocarTomVocal(midi, duracaoVocal);
     // um respiro antes de religar o microfone, pra deixar a sala calar
     await esperar(120);
   });

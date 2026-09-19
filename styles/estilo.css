@@ -368,3 +368,102 @@ body.sem-maos .rolagem { height: 280px; }
 @media (prefers-reduced-motion: reduce) {
   .ponteiro, .barra-preenchimento, .mostrador { transition: none; }
 }
+
+/* --- cuidar da voz: aquecimento e check-in --- */
+
+.aquecimento { text-align: center; }
+.aquecimento .etapa-titulo {
+  margin: 12px 0 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: calc(var(--corpo) * 1.6);
+  color: var(--texto);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.contagem { margin: 8px 0; font-variant-numeric: tabular-nums; }
+.etapa-instrucao {
+  margin: 4px 0 0;
+  min-height: 3.9em;
+  font-size: 1.05em;
+  line-height: 1.4;
+}
+.proxima-etapa { margin: 4px 0 0; }
+.controles-aquecimento { margin-top: 16px; justify-content: center; }
+.controles-aquecimento .botao { flex: 1 1 28%; }
+
+.sintomas { display: flex; flex-direction: column; gap: 14px; }
+.sintoma-nome { display: block; margin-bottom: 6px; }
+.escolha { display: flex; gap: 6px; }
+.escolha-botao {
+  flex: 1 1 0;
+  font-family: inherit;
+  font-size: 0.9em;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--borda);
+  background: transparent;
+  color: var(--texto-fraco);
+  cursor: pointer;
+}
+.escolha-botao.marcado {
+  border-color: var(--destaque);
+  color: var(--texto);
+  background: color-mix(in srgb, var(--destaque) 15%, transparent);
+}
+
+.semaforo.verde { border-color: var(--afinado); }
+.semaforo.amarelo { border-color: var(--perto); }
+.semaforo.vermelho { border-color: var(--longe); }
+.semaforo-titulo {
+  margin: 0 0 12px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.8rem;
+}
+.semaforo.verde .semaforo-titulo { color: var(--afinado); }
+.semaforo.amarelo .semaforo-titulo { color: var(--perto); }
+.semaforo.vermelho .semaforo-titulo { color: var(--longe); }
+.nota-rodape { text-align: center; }
+
+.ponto {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: var(--texto-fraco);
+}
+.ponto.verde { background: var(--afinado); }
+.ponto.amarelo { background: var(--perto); }
+.ponto.vermelho { background: var(--longe); }
+
+/* --- aviso de versão nova --- */
+
+.aviso-versao {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--destaque);
+  background: color-mix(in srgb, var(--destaque) 15%, var(--painel));
+  color: var(--texto);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.rotulo-arquivo { cursor: pointer; }
+
+.campo { display: block; margin: 12px 0; }
+.campo > span { display: block; margin-bottom: 6px; }
+.campo select { width: 100%; }
+.campo .linha select { flex: 1 1 auto; width: auto; }
+.resposta-tom { color: var(--destaque); }
+
+/* links dentro de texto: no tom do app, não o azul do navegador */
+.progresso-texto a, .chamada a { color: var(--destaque); }
+
+.comparacao { display: block; font-weight: 400; font-size: 0.85em; color: var(--texto-fraco); }
+.comparacao.melhor { color: var(--afinado); }
+.comparacao.pior { color: var(--longe); }

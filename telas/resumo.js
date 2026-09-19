@@ -9,7 +9,7 @@
 // cinco recomendações no fim de um treino de dez minutos é uma lista que
 // ninguém lê.
 
-import { listarSessoes } from '../dados/banco.js';
+import { listarSessoes, TIPOS_DE_TREINO } from '../dados/banco.js';
 import { nomeDaNota, rotuloDuplo } from '../audio/notas.js';
 import { evolucaoDeErro } from '../treino/perfil.js';
 
@@ -19,7 +19,7 @@ function minutos(ms) {
 }
 
 export async function montar(raiz) {
-  const sessoes = await listarSessoes({ limite: 30 });
+  const sessoes = (await listarSessoes({ limite: 60 })).filter((s) => TIPOS_DE_TREINO.includes(s.tipo));
   const sessao = sessoes[0];
 
   if (!sessao) {
@@ -35,6 +35,18 @@ export async function montar(raiz) {
   const ehTeste = sessao.tipo === 'diagnostico';
   const temNumero = Number.isFinite(sessao.erroMedioCents);
   const anterior = sessoes.slice(1).find((s) => Number.isFinite(s.erroMedioCents));
+  // Pra precisão e oscilação a comparação é com a última sessão que as mediu
+  // — sessões de antes desta versão não têm esses números.
+  const anteriorComPrecisao = sessoes.slice(1).find((s) => Number.isFinite(s.precisaoCents));
+  const anteriorComOscilacao = sessoes.slice(1).find((s) => Number.isFinite(s.oscilacaoCents));
+
+  // "±18 (antes ±25)" — menor é melhor nos dois números.
+  function comparado(atual, antes) {
+    if (!Number.isFinite(antes)) return '';
+    const d = Math.round(antes) - Math.round(atual);
+    if (Math.abs(d) < 2) return ' <span class="comparacao">igual à anterior</span>';
+    return ` <span class="comparacao ${d > 0 ? 'melhor' : 'pior'}">${d > 0 ? `${d} melhor` : `${-d} pior`}</span>`;
+  }
 
   raiz.innerHTML = `
     <section class="painel destaque-inicial">
@@ -49,6 +61,10 @@ export async function montar(raiz) {
         <div><dt>Notas acertadas</dt><dd>${sessao.acertos ?? 0} de ${sessao.total ?? 0}</dd></div>
         ${sessao.forasDaNota ? `<div><dt>Saiu outra nota</dt><dd>${sessao.forasDaNota}×</dd></div>` : ''}
         <div><dt>Barra chegou em</dt><dd>±${sessao.toleranciaFinal ?? '—'} cents</dd></div>
+        ${linhaTendencia()}
+        ${Number.isFinite(sessao.precisaoCents) ? `<div><dt>Precisão (quanto as tentativas variam)</dt><dd>±${Math.round(sessao.precisaoCents)} cents${comparado(sessao.precisaoCents, anteriorComPrecisao && anteriorComPrecisao.precisaoCents)}</dd></div>` : ''}
+        ${Number.isFinite(sessao.oscilacaoCents) ? `<div><dt>Oscilação dentro da nota</dt><dd>${Math.round(sessao.oscilacaoCents)} cents${comparado(sessao.oscilacaoCents, anteriorComOscilacao && anteriorComOscilacao.oscilacaoCents)}</dd></div>` : ''}
+        ${sessao.vibrato ? `<div><dt>Vibrato (em ${sessao.vibrato.notas} de ${sessao.vibrato.de} notas)</dt><dd>${sessao.vibrato.velocidadeHz.toFixed(1).replace('.', ',')} Hz · ±${Math.round(sessao.vibrato.amplitudeCents)} cents</dd></div>` : ''}
         <div><dt>Duração</dt><dd>${minutos(sessao.duracaoMs)}</dd></div>
         ${sessao.extensao ? `<div><dt>Extensão medida</dt><dd>${rotuloDuplo(sessao.extensao.midiMinimo)} — ${rotuloDuplo(sessao.extensao.midiMaximo)}</dd></div>` : ''}
       </dl>
@@ -80,6 +96,17 @@ export async function montar(raiz) {
     `;
   }
 
+  // A tendência só aparece quando é grande o bastante pra valer uma correção:
+  // abaixo de 8 cents é ruído, e dizer "você canta 3 cents alto" ensinaria a
+  // corrigir o que não precisa.
+  function linhaTendencia() {
+    const t = sessao.tendenciaCents;
+    if (!Number.isFinite(t)) return '';
+    const n = Math.round(Math.abs(t));
+    const texto = n < 8 ? 'sem lado — nem alto, nem baixo' : `${n} cents ${t > 0 ? 'alto' : 'baixo'}`;
+    return `<div><dt>Tendência</dt><dd>${texto}</dd></div>`;
+  }
+
   function blocoSemNumero() {
     if (sessao.forasDaNota) {
       return `<p class="chamada">Sem erro médio hoje: as notas que saíram eram outras notas.</p>`;
@@ -98,6 +125,12 @@ export async function montar(raiz) {
     // o tom acabar e entrando na mesma altura dele.
     if (foras && foras >= total / 2) {
       return 'Você entrou em <strong>outra oitava</strong> na maior parte das notas. Ouça o tom até o fim e entre junto com ele, não antes.';
+    }
+    // Um lado claro vale mais que uma nota fraca: é um ajuste só, que conserta
+    // todas as notas de uma vez.
+    if (Number.isFinite(sessao.tendenciaCents) && Math.abs(sessao.tendenciaCents) >= 15) {
+      const lado = sessao.tendenciaCents > 0 ? 'acima' : 'abaixo';
+      return `Você tende a cantar <strong>${Math.round(Math.abs(sessao.tendenciaCents))} cents ${lado}</strong> da nota. Na próxima, mire ${sessao.tendenciaCents > 0 ? 'um pouco mais baixo' : 'um pouco mais alto'} do que parece certo.`;
     }
     if (sessao.notaMaisFraca !== null && sessao.notaMaisFraca !== undefined) {
       return `Seu buraco é <strong>${nomeDaNota(sessao.notaMaisFraca)}</strong>. Amanhã começamos por ele.`;

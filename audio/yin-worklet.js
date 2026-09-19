@@ -39,10 +39,22 @@ class ProcessadorYin extends AudioWorkletProcessor {
     this.desdeUltima = 0;
     this.escutando = true;
 
+    // Os últimos 2 s de áudio cru, pro guia com a própria voz: quando a
+    // pessoa acerta uma nota, a tela pede o trecho e guarda. Separado do anel
+    // do detector (que tem só uma janela de 2048).
+    this.captura = new Float32Array(Math.ceil(sampleRate * 2));
+    this.escritaCaptura = 0;
+
     this.port.onmessage = ({ data }) => {
       if (!data) return;
       if (data.tipo === 'faixa') {
         this.detector.definirFaixa(data.minima, data.maxima);
+      } else if (data.tipo === 'capturar') {
+        const n = Math.min(this.captura.length, Math.round((data.ms / 1000) * sampleRate));
+        const saida = new Float32Array(n);
+        const inicio = (this.escritaCaptura - n + this.captura.length) % this.captura.length;
+        for (let i = 0; i < n; i++) saida[i] = this.captura[(inicio + i) % this.captura.length];
+        this.port.postMessage({ tipo: 'captura', pedido: data.pedido, dados: saida, taxa: sampleRate }, [saida.buffer]);
       } else if (data.tipo === 'escutar') {
         // Ao voltar a escutar, o anel é descartado: ele ainda guarda o rabo do
         // som-guia que acabou de tocar, e detectar em cima disso faria o app
@@ -60,6 +72,8 @@ class ProcessadorYin extends AudioWorkletProcessor {
     for (let i = 0; i < canal.length; i++) {
       this.anel[this.escrita] = canal[i];
       this.escrita = (this.escrita + 1) % this.tamanho;
+      this.captura[this.escritaCaptura] = canal[i];
+      this.escritaCaptura = (this.escritaCaptura + 1) % this.captura.length;
     }
     if (this.preenchido < this.tamanho) this.preenchido += canal.length;
     this.desdeUltima += canal.length;

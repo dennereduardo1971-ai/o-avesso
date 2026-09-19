@@ -20,6 +20,7 @@ import { centsAteAlvo, frequenciaParaMidiContinuo, nomeDaNota } from '../../audi
 import { apresentarNota, tocarPiano, tocarSinal, silenciar } from '../../audio/sintese.js';
 import { aoDetectar, comEscutaPausada } from '../../audio/motor.js';
 import { falar } from '../../audio/fala.js';
+import { analisarVibrato } from '../vibrato.js';
 
 export const PREPARO_MS = 1300;
 export const BLOCO_MS = 3600;
@@ -49,6 +50,7 @@ export function criarExercicioDeAfinacao({
   let tempoDentro = 0;
   let ultimaAmostra = 0;
   let amostrasDoBloco = [];
+  let temposDoBloco = [];  // o instante de cada amostra — o vibrato precisa do tempo
   let ultimoAcertou = false;
   let desinscrever = null;
   let laco = null;
@@ -97,7 +99,7 @@ export function criarExercicioDeAfinacao({
       // o navegador engasgou) não vira crédito de nota sustentada.
       const dt = ultimaAmostra ? Math.min(agora - ultimaAmostra, 120) : 0;
       if (dentro) tempoDentro += dt;
-      if (cents !== null) amostrasDoBloco.push(cents);
+      if (cents !== null) { amostrasDoBloco.push(cents); temposDoBloco.push(agora); }
       ultimaAmostra = agora;
     }
 
@@ -124,6 +126,7 @@ export function criarExercicioDeAfinacao({
       tempoDentro = 0;
       ultimaAmostra = 0;
       amostrasDoBloco = [];
+      temposDoBloco = [];
       irPara('cantando');
     } else if (estado === 'cantando' && agora >= fimDoBloco) {
       concluirBloco();
@@ -139,6 +142,17 @@ export function criarExercicioDeAfinacao({
     const ordenado = [...valores].sort((a, b) => a - b);
     const meio = Math.floor(ordenado.length / 2);
     return ordenado.length % 2 ? ordenado[meio] : (ordenado[meio - 1] + ordenado[meio]) / 2;
+  }
+
+  // O tremor dentro da nota: desvio-padrão das leituras depois da entrada. O
+  // primeiro terço fica de fora porque é onde a voz ainda está chegando na
+  // nota — contar a subida como tremor puniria quem entra de baixo, que é
+  // o jeito normal de cantar.
+  function oscilacaoDoBloco(amostras) {
+    const miolo = amostras.slice(Math.floor(amostras.length / 3));
+    if (miolo.length < AMOSTRAS_MINIMAS / 2) return null;
+    const media = miolo.reduce((s, c) => s + c, 0) / miolo.length;
+    return Math.sqrt(miolo.reduce((s, c) => s + (c - media) ** 2, 0) / miolo.length);
   }
 
   function concluirBloco() {
@@ -169,10 +183,15 @@ export function criarExercicioDeAfinacao({
     const foraDaNota = !ultimoAcertou && erroAbsoluto > 600;
 
     const ajuste = tolerancia.registrar(ultimoAcertou);
+    const oscilacao = foraDaNota ? null : oscilacaoDoBloco(amostrasDoBloco);
+    const vibrato = foraDaNota ? null : analisarVibrato(temposDoBloco, amostrasDoBloco);
     perfil.registrar(alvo, {
       acertou: ultimoAcertou,
       erroCents: foraDaNota ? null : erroAbsoluto,
       foraDaNota,
+      desvioCents: desvioTipico,
+      oscilacaoCents: oscilacao,
+      vibrato,
     });
 
     emitir({
@@ -181,6 +200,8 @@ export function criarExercicioDeAfinacao({
       resultado: ultimoAcertou ? 'acertou' : foraDaNota ? 'outra-nota' : 'errou',
       erroCents: foraDaNota ? null : erroAbsoluto,
       desvioCents: desvioTipico,
+      oscilacaoCents: oscilacao,
+      vibrato,
       tempoDentro,
       tentativa,
       toleranciaCents: tolerancia.valor,
@@ -212,7 +233,7 @@ export function criarExercicioDeAfinacao({
     const espalhamento = amostras.length ? Math.max(...amostras) - Math.min(...amostras) : 0;
     // Oscilar em torno do alvo é um problema diferente de estar parado no
     // lugar errado, e a correção também é diferente.
-    if (Math.abs(desvioTipico) < 35 && espalhamento > 90) {
+    if (Math.abs(desvioTipico) < 35 && espalhamento > 90 && !analisarVibrato(temposDoBloco, amostras)) {
       return 'Está oscilando. Segure a nota parada.';
     }
     if (desvioTipico < 0) return `Está baixo. Suba. ${nomeDaNota(alvo)} é assim.`;

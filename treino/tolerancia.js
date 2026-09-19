@@ -16,6 +16,20 @@
 export const TOLERANCIA_INICIAL = 50;
 export const TOLERANCIA_MINIMA = 20;
 
+// NÍVEL EXPERIENTE
+// ±20 é melhor que a maioria canta em karaokê — e é frouxo pra quem canta de
+// verdade: numa amostra de cantores de habilidade variada o erro mediano por
+// nota foi 19 cents (Mauch et al., 2014). Quem já canta bem bate ±20 na
+// primeira semana e dali em diante o app só diz "Isso.", sem ensinar mais
+// nada. No nível experiente a barra continua descendo até ±10. O caminho até
+// lá é o mesmo — três acertos seguidos pra apertar cinco cents —, então
+// ninguém é jogado no ±10 de uma vez.
+export const TOLERANCIA_MINIMA_EXPERIENTE = 10;
+
+export function minimaDoNivel(nivel) {
+  return nivel === 'experiente' ? TOLERANCIA_MINIMA_EXPERIENTE : TOLERANCIA_MINIMA;
+}
+
 export function criarTolerancia({
   inicial = TOLERANCIA_INICIAL,
   minima = TOLERANCIA_MINIMA,

@@ -21,7 +21,7 @@ import { lerPerfil, salvarPerfil, gravarSessao } from '../dados/banco.js';
 import { criarPerfilDeTreino } from '../treino/perfil.js';
 import { criarTolerancia } from '../treino/tolerancia.js';
 import { criarExercicioDeAfinacao } from '../treino/exercicios/afinacao.js';
-import { notasDeDiagnostico, extensaoDoPerfil, EXTENSAO_PADRAO } from '../treino/voz.js';
+import { notasDeDiagnostico, VOZES, vozDoPerfil } from '../treino/voz.js';
 import { criarPainelDeExercicio } from '../ui/painel-exercicio.js';
 import * as semMaos from '../ui/semmaos.js';
 
@@ -34,6 +34,8 @@ export async function montar(raiz, parametros, { ir } = {}) {
   const perfil = await lerPerfil();
   await semMaos.definir(!!perfil.preferencias.semMaos);
   const falaLigada = !!perfil.preferencias.fala;
+  let voz = vozDoPerfil(perfil);
+  let avisoMostrado = false;
 
   let cancelado = false;
   let desinscrever = null;
@@ -69,6 +71,15 @@ export async function montar(raiz, parametros, { ir } = {}) {
           <li><strong>Agudo.</strong> Mesma coisa, pra cima — sem forçar; o que sai, sai.</li>
           <li><strong>Precisão.</strong> Oito notas: o app toca, você repete.</li>
         </ol>
+        <p class="chamada">Sua voz é…</p>
+        <div class="escolha" role="group" aria-label="Tipo de voz">
+          ${Object.values(VOZES).map((v) => `
+            <button type="button" class="escolha-botao${v.id === voz ? ' marcado' : ''}"
+              data-voz="${v.id}" aria-pressed="${v.id === voz}">${v.nome}</button>`).join('')}
+        </div>
+        <p class="progresso-texto">
+          Só decide de onde o teste começa a medir. Quem manda é a medida.
+        </p>
         <p class="progresso-texto">
           Faça num lugar razoavelmente quieto, com o celular a um ou dois metros.
           Não precisa acertar nada — é medida, não prova.
@@ -77,6 +88,16 @@ export async function montar(raiz, parametros, { ir } = {}) {
         <a class="botao largo secundario" href="#/">Agora não</a>
       </section>
     `;
+    raiz.querySelectorAll('[data-voz]').forEach((botao) => {
+      botao.addEventListener('click', async () => {
+        voz = botao.dataset.voz;
+        raiz.querySelectorAll('[data-voz]').forEach((b) => {
+          b.classList.toggle('marcado', b === botao);
+          b.setAttribute('aria-pressed', String(b === botao));
+        });
+        await salvarPerfil({ preferencias: { voz } });
+      });
+    });
     raiz.querySelector('#comecar').addEventListener('click', async () => {
       await acordarContexto();
       const resultado = await ligarEscuta();
@@ -85,6 +106,15 @@ export async function montar(raiz, parametros, { ir } = {}) {
           'afterend',
           `<p class="aviso">${resultado.motivo}</p>`
         );
+        return;
+      }
+      // O teste vira o ponto zero das próximas semanas: vale mais ainda medir
+      // com o microfone bom. Avisa uma vez; o segundo toque segue.
+      if (resultado.aviso && !avisoMostrado) {
+        avisoMostrado = true;
+        const botao = raiz.querySelector('#comecar');
+        botao.insertAdjacentHTML('afterend', `<p class="aviso">${resultado.aviso}</p>`);
+        botao.textContent = 'Começar assim mesmo';
         return;
       }
       // A busca fica larga durante a medida: travá-la na faixa de barítono
@@ -100,7 +130,8 @@ export async function montar(raiz, parametros, { ir } = {}) {
     if (cancelado) return;
     const minhaEtapa = ++etapaAtual;
     const grave = qual === 'grave';
-    const referencia = grave ? 55 : 64; // Sol3 e Mi4: pontos de partida confortáveis
+    // pontos de partida confortáveis pro tipo de voz (Sol3/Mi4 na grave, Sol4/Mi5 na aguda)
+    const referencia = VOZES[voz].referencias[grave ? 'grave' : 'agudo'];
 
     raiz.innerHTML = `
       <section class="painel">
@@ -197,9 +228,9 @@ export async function montar(raiz, parametros, { ir } = {}) {
     const grave = medido.grave;
     const agudo = medido.agudo;
     // Se uma das pontas não saiu (ninguém cantou, ambiente barulhento), cai no
-    // padrão de barítono em vez de inventar uma extensão de uma nota só.
+    // palpite do tipo de voz em vez de inventar uma extensão de uma nota só.
     if (!Number.isFinite(grave) || !Number.isFinite(agudo) || agudo - grave < 7) {
-      return { ...EXTENSAO_PADRAO, incompleta: true };
+      return { ...VOZES[voz].extensao, incompleta: true };
     }
     return { midiMinimo: grave, midiMaximo: agudo, incompleta: false };
   }

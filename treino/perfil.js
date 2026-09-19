@@ -24,7 +24,7 @@ export function criarPerfilDeTreino(perfilGuardado = {}) {
   // de 1200 cents, e um único desses joga a média da sessão pra um número que
   // não quer dizer nada. O erro médio mede afinação; nota errada é contada à
   // parte, e some da média.
-  function registrar(midi, { acertou, erroCents, foraDaNota = false }) {
+  function registrar(midi, { acertou, erroCents, foraDaNota = false, desvioCents = null, oscilacaoCents = null, vibrato = null }) {
     const chave = String(midi);
     const atual = notas[chave] || { tentativas: 0, acertos: 0, somaErroAbs: 0, medidas: 0, forasDaNota: 0, ultimoEm: 0 };
 
@@ -43,6 +43,9 @@ export function criarPerfilDeTreino(perfilGuardado = {}) {
       acertou: !!acertou,
       erroCents: Number.isFinite(erroCents) ? erroCents : null,
       foraDaNota: !!foraDaNota,
+      desvioCents: !foraDaNota && Number.isFinite(desvioCents) ? desvioCents : null,
+      oscilacaoCents: !foraDaNota && Number.isFinite(oscilacaoCents) ? oscilacaoCents : null,
+      vibrato: !foraDaNota && vibrato ? { velocidadeHz: vibrato.velocidadeHz, amplitudeCents: vibrato.amplitudeCents } : null,
     });
   }
 
@@ -111,6 +114,7 @@ export function criarPerfilDeTreino(perfilGuardado = {}) {
       forasDaNota,
       notaMaisFraca: pior ? pior.midi : null,
       frase,
+      ...metricasDaSessao(daSessao),
     };
   }
 
@@ -125,6 +129,59 @@ export function criarPerfilDeTreino(perfilGuardado = {}) {
     // o formato que vai pro banco
     paraSalvar() { return { notas }; },
   };
+}
+
+// Três números além do erro médio, porque erro médio sozinho esconde o
+// principal (Pfordresher et al., 2010: a maioria das pessoas é mais exata na
+// média do que consistente entre tentativas).
+//
+//   tendência — o desvio médio COM sinal: canta sistematicamente alto (+) ou
+//               baixo (−). É a correção mais barata que existe: "você tende a
+//               entrar 12 cents baixo" se conserta em uma sessão.
+//   precisão  — o desvio-padrão desses desvios: o quanto as tentativas se
+//               espalham. Menor é mais consistente.
+//   oscilação — a mediana do tremor dentro de cada nota sustentada. Vibrato
+//               entra aqui também; ele é medido à parte quando existir.
+//
+// Só entram tentativas com medida de verdade (nota errada de oitava fica de
+// fora, como no erro médio) e só com pelo menos três delas: com menos, o
+// número é sorte.
+export function metricasDaSessao(tentativas, { minimo = 3 } = {}) {
+  const desvios = tentativas.map((t) => t.desvioCents).filter(Number.isFinite);
+  const oscilacoes = tentativas.map((t) => t.oscilacaoCents).filter(Number.isFinite);
+  const resultado = { tendenciaCents: null, precisaoCents: null, oscilacaoCents: null, vibrato: null };
+
+  // Vibrato: mediana de velocidade e amplitude entre as notas em que ele
+  // apareceu, e em quantas apareceu — "em 2 de 10 notas" é outra informação
+  // que "em 9 de 10".
+  const comVibrato = tentativas.filter((t) => t.vibrato);
+  const medidas = tentativas.filter((t) => Number.isFinite(t.desvioCents)).length;
+  if (comVibrato.length >= 2) {
+    const mediana = (lista) => {
+      const o = [...lista].sort((a, b) => a - b);
+      const m = Math.floor(o.length / 2);
+      return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
+    };
+    resultado.vibrato = {
+      velocidadeHz: mediana(comVibrato.map((t) => t.vibrato.velocidadeHz)),
+      amplitudeCents: mediana(comVibrato.map((t) => t.vibrato.amplitudeCents)),
+      notas: comVibrato.length,
+      de: medidas,
+    };
+  }
+
+  if (desvios.length >= minimo) {
+    const media = desvios.reduce((s, d) => s + d, 0) / desvios.length;
+    const variancia = desvios.reduce((s, d) => s + (d - media) ** 2, 0) / (desvios.length - 1);
+    resultado.tendenciaCents = media;
+    resultado.precisaoCents = Math.sqrt(variancia);
+  }
+  if (oscilacoes.length >= minimo) {
+    const ordenadas = [...oscilacoes].sort((a, b) => a - b);
+    const meio = Math.floor(ordenadas.length / 2);
+    resultado.oscilacaoCents = ordenadas.length % 2 ? ordenadas[meio] : (ordenadas[meio - 1] + ordenadas[meio]) / 2;
+  }
+  return resultado;
 }
 
 // Erro médio de uma lista de sessões guardadas — a linha do gráfico da Fase 4,

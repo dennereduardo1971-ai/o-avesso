@@ -16,7 +16,9 @@ const TEXTO_POR_ESTADO = {
   fim: 'Fim',
 };
 
-export function criarPainelDeExercicio(raiz, { rotuloDeParar = 'Parar sessão' } = {}) {
+// `linhaVisivel(ensaio)` decide, a cada tentativa, se a voz aparece enquanto
+// se canta. Sem ele é sempre — o teste inicial e o comportamento antigo.
+export function criarPainelDeExercicio(raiz, { rotuloDeParar = 'Parar sessão', linhaVisivel = () => true } = {}) {
   raiz.innerHTML = `
     <section class="painel painel-exercicio">
       <div class="cabeca-exercicio">
@@ -54,6 +56,8 @@ export function criarPainelDeExercicio(raiz, { rotuloDeParar = 'Parar sessão' }
   const rolagem = criarRolagem(canvas);
   let blocos = [];
   let aoParar = () => {};
+  let ensaio = -1;
+  let asCegas = false;
 
   rolagem.iniciar();
 
@@ -69,7 +73,14 @@ export function criarPainelDeExercicio(raiz, { rotuloDeParar = 'Parar sessão' }
       elPasso.textContent = `Nota ${Math.min(evento.indice + 1, evento.total)} de ${evento.total}` +
         (evento.tentativa > 1 ? ` · tentativa ${evento.tentativa}` : '');
       elTolerancia.textContent = `±${evento.toleranciaCents} cents`;
-      elInstrucao.textContent = TEXTO_POR_ESTADO[evento.estado] ?? '';
+      if (evento.estado === 'preparando') {
+        ensaio++;
+        asCegas = !linhaVisivel(ensaio);
+        rolagem.definirVozVisivel(!asCegas);
+      }
+      elInstrucao.textContent = asCegas && (evento.estado === 'preparando' || evento.estado === 'cantando')
+        ? `${TEXTO_POR_ESTADO[evento.estado]} — de ouvido`
+        : TEXTO_POR_ESTADO[evento.estado] ?? '';
       if (Number.isFinite(evento.midi)) {
         elAlvo.textContent = rotuloDuplo(evento.midi);
         rolagem.configurar({ centroMidi: evento.midi, toleranciaCents: evento.toleranciaCents });
@@ -88,10 +99,13 @@ export function criarPainelDeExercicio(raiz, { rotuloDeParar = 'Parar sessão' }
       }
     } else if (evento.tipo === 'amostra') {
       rolagem.amostrar(evento.tempo, evento.frequencia);
-      elBarra.style.width = `${Math.round(evento.progresso * 100)}%`;
+      // A barra de sustentação também é retorno: às cegas ela fica parada.
+      if (!asCegas) elBarra.style.width = `${Math.round(evento.progresso * 100)}%`;
     } else if (evento.tipo === 'resultado') {
       const ultimo = blocos[blocos.length - 1];
       if (ultimo) ultimo.estado = evento.resultado === 'acertou' ? 'acertou' : 'errou';
+      // Fim do ensaio às cegas: agora sim, o traçado inteiro aparece.
+      if (asCegas) { asCegas = false; rolagem.definirVozVisivel(true); }
       elBarra.style.width = evento.resultado === 'acertou' ? '100%' : '0%';
     } else if (evento.tipo === 'fala') {
       // A linha do treinador é legenda, não decoração: o TTS pode não existir

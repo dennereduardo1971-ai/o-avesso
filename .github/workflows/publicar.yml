@@ -15,6 +15,12 @@
 #   3. deixa de fora o que não é do site;
 #   4. empurra o resultado pro branch `gh-pages`, que é de onde o site é servido.
 #
+# E ANTES DE TUDO: A VERIFICAÇÃO
+# A página verificacao/ roda num Chromium sem tela (ferramentas/verificar.mjs).
+# Um teste falhando para a publicação aqui — antes, o detector podia quebrar e
+# ir pro ar do mesmo jeito, porque a verificação só rodava quando alguém
+# lembrava de abrir a página.
+#
 # POR QUE BRANCH, E NÃO `actions/deploy-pages`
 # A via oficial via Actions (configure-pages + deploy-pages) ficou presa em
 # `deployment_queued` até estourar o tempo, três vezes seguidas, enquanto a API
@@ -49,6 +55,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # O Playwright mora só em ferramentas/, que nunca vai pro ar.
+      - name: Preparar o navegador da verificação
+        working-directory: ferramentas
+        run: |
+          npm install --no-save --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+
+      - name: Verificação — sem ela não publica
+        run: node ferramentas/verificar.mjs
 
       - name: Gerar a lista de arquivos do precache
         run: ./ferramentas/listar-arquivos.sh

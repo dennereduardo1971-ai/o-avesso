@@ -26,7 +26,7 @@
 
 export const LIMIAR_PADRAO = 0.15;
 export const FREQUENCIA_MINIMA = 65;   // Dó2, um pouco abaixo do grave de barítono
-export const FREQUENCIA_MAXIMA = 1100; // Dó6, acima de qualquer agudo cantado aqui
+export const FREQUENCIA_MAXIMA = 1400; // Fá6: o agudo de uma cantora treinada passa de Dó6
 
 // --- FFT ---------------------------------------------------------------
 //
